@@ -107,13 +107,9 @@ export default function ConfigureScreen() {
               <ThemedText style={styles.sectionTitle}>SETTINGS</ThemedText>
             </View>
 
-            <View style={styles.settingsPlaceholder}>
-              <ThemedText style={styles.placeholderText}>
-                {overlayConfig.type === 'elapsed' && 'Timer settings coming next'}
-                {overlayConfig.type === 'timestamp' && 'Timestamp settings coming next'}
-                {overlayConfig.type === 'text' && 'Text settings coming next'}
-              </ThemedText>
-            </View>
+            {overlayConfig.type === 'elapsed' && <TimerEditor />}
+            {overlayConfig.type === 'timestamp' && <TimestampEditor />}
+            {overlayConfig.type === 'text' && <TextEditor />}
           </View>
         )}
       </ScrollView>
@@ -237,19 +233,6 @@ const styles = StyleSheet.create({
   },
   typeDescriptionActive: {
     color: 'rgba(255, 255, 255, 0.7)',
-  },
-  settingsPlaceholder: {
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 0,
-    alignItems: 'center',
-  },
-  placeholderText: {
-    fontSize: 12,
-    fontWeight: '300',
-    color: '#999',
-    fontStyle: 'italic',
   },
   errorContainer: {
     flex: 1,
