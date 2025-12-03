@@ -115,50 +115,52 @@ export default function ConfigureScreen() {
           </View>
         </View>
 
-        {/* Overlay Type Selector */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionDot} />
-            <ThemedText style={styles.sectionTitle}>OVERLAY TYPE</ThemedText>
-          </View>
+        {/* Overlay Type Selector - Only show when no overlays exist */}
+        {overlays.length === 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionDot} />
+              <ThemedText style={styles.sectionTitle}>OVERLAY TYPE</ThemedText>
+            </View>
 
-          <View style={styles.typeGrid}>
-            {overlayTypes.map((item) => {
-              const isSelected = item.type === 'none'
-                ? overlays.length === 0
-                : hasOverlayType(item.type);
+            <View style={styles.typeGrid}>
+              {overlayTypes.map((item) => {
+                const isSelected = item.type === 'none'
+                  ? overlays.length === 0
+                  : hasOverlayType(item.type);
 
-              return (
-                <TouchableOpacity
-                  key={item.type}
-                  style={[
-                    styles.typeCard,
-                    isSelected && styles.typeCardActive,
-                  ]}
-                  onPress={() => toggleOverlayType(item.type)}
-                  activeOpacity={0.7}
-                >
-                  <ThemedText
+                return (
+                  <TouchableOpacity
+                    key={item.type}
                     style={[
-                      styles.typeLabel,
-                      isSelected && styles.typeLabelActive,
+                      styles.typeCard,
+                      isSelected && styles.typeCardActive,
                     ]}
+                    onPress={() => toggleOverlayType(item.type)}
+                    activeOpacity={0.7}
                   >
-                    {item.label}
-                  </ThemedText>
-                  <ThemedText
-                    style={[
-                      styles.typeDescription,
-                      isSelected && styles.typeDescriptionActive,
-                    ]}
-                  >
-                    {item.description}
-                  </ThemedText>
-                </TouchableOpacity>
-              );
-            })}
+                    <ThemedText
+                      style={[
+                        styles.typeLabel,
+                        isSelected && styles.typeLabelActive,
+                      ]}
+                    >
+                      {item.label}
+                    </ThemedText>
+                    <ThemedText
+                      style={[
+                        styles.typeDescription,
+                        isSelected && styles.typeDescriptionActive,
+                      ]}
+                    >
+                      {item.description}
+                    </ThemedText>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Settings Panel */}
         {settingsPanelOpen && selectedOverlay ? (
