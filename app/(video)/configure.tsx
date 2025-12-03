@@ -1,28 +1,26 @@
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-} from "react-native";
-import { useRouter } from "expo-router";
-import { useEffect } from "react";
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  runOnJS,
-} from "react-native-reanimated";
 import { ThemedText } from "@/components/themed-text";
-import { VideoPlayer } from "@/components/video/VideoPlayer";
 import { OverlayPreview } from "@/components/video/OverlayPreview";
+import { PositionControl } from "@/components/video/PositionControl";
+import { StyleEditor } from "@/components/video/StyleEditor";
+import { TextEditor } from "@/components/video/TextEditor";
 import { TimerEditor } from "@/components/video/TimerEditor";
 import { TimestampEditor } from "@/components/video/TimestampEditor";
-import { TextEditor } from "@/components/video/TextEditor";
-import { StyleEditor } from "@/components/video/StyleEditor";
-import { PositionControl } from "@/components/video/PositionControl";
+import { VideoPlayer } from "@/components/video/VideoPlayer";
 import { useVideoStore } from "@/lib/store/videoStore";
 import type { OverlayType } from "@/lib/types/overlay";
+import { useRouter } from "expo-router";
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 
 export default function ConfigureScreen() {
   const router = useRouter();
@@ -30,53 +28,49 @@ export default function ConfigureScreen() {
     useVideoStore();
 
   // Video dimensions for overlay positioning
-  const videoWidth = Dimensions.get("window").width - 48;
-  const videoHeight = videoWidth * (9 / 16);
+  const videoWidth = Dimensions.get("window").width;
+  const videoHeight = videoWidth * (10 / 16);
 
-  // Shared values for overlay position
-  const translateX = useSharedValue(overlayConfig.position.x * videoWidth);
-  const translateY = useSharedValue(overlayConfig.position.y * videoHeight);
+  // Calculate position in pixels from percentage
+  const positionX = overlayConfig.position.x * videoWidth;
+  const positionY = overlayConfig.position.y * videoHeight;
 
-  // Track starting position for each gesture
-  const gestureStartX = useSharedValue(0);
-  const gestureStartY = useSharedValue(0);
+  // Shared values for drag offset only
+  const offsetX = useSharedValue(0);
+  const offsetY = useSharedValue(0);
 
-  // Update shared values when position changes from external sources (like PositionControl)
-  useEffect(() => {
-    translateX.value = overlayConfig.position.x * videoWidth;
-    translateY.value = overlayConfig.position.y * videoHeight;
-  }, [overlayConfig.position.x, overlayConfig.position.y, videoWidth, videoHeight, translateX, translateY]);
+  // const panGesture = Gesture.Pan()
+  //   .onStart(() => {
+  //     // Reset offset when starting a new drag
+  //     offsetX.value = 0;
+  //     offsetY.value = 0;
+  //   })
+  //   .onUpdate((event) => {
+  //     offsetX.value = event.translationX;
+  //     offsetY.value = event.translationY;
+  //   })
+  //   .onEnd((event) => {
+  //     // Calculate final position
+  //     const newX = Math.max(
+  //       0,
+  //       Math.min(videoWidth, positionX + event.translationX)
+  //     );
+  //     const newY = Math.max(
+  //       0,
+  //       Math.min(videoHeight, positionY + event.translationY)
+  //     );
 
-  const panGesture = Gesture.Pan()
-    .onStart(() => {
-      gestureStartX.value = translateX.value;
-      gestureStartY.value = translateY.value;
-    })
-    .onUpdate((event) => {
-      // Add translation to the starting position
-      const newX = gestureStartX.value + event.translationX;
-      const newY = gestureStartY.value + event.translationY;
+  //     // Convert to percentage
+  //     const percentX = newX / videoWidth;
+  //     const percentY = newY / videoHeight;
 
-      // Constrain to video bounds
-      translateX.value = Math.max(0, Math.min(videoWidth, newX));
-      translateY.value = Math.max(0, Math.min(videoHeight, newY));
-    })
-    .onFinalize(() => {
-      'worklet';
-      // Save the final position
-      const percentX = translateX.value / videoWidth;
-      const percentY = translateY.value / videoHeight;
-
-      // Update on JS thread
-      updateOverlayConfig({
-        position: { x: percentX, y: percentY },
-      });
-    });
+  //     // Update position in store (this will trigger a re-render with new positionX/Y)
+  //   });
 
   const animatedOverlayStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
+      { translateX: positionX + offsetX.value },
+      { translateY: positionY + offsetY.value },
     ],
   }));
 
@@ -90,11 +84,11 @@ export default function ConfigureScreen() {
     );
   }
 
-  const overlayTypes: Array<{
+  const overlayTypes: {
     type: OverlayType;
     label: string;
     description: string;
-  }> = [
+  }[] = [
     {
       type: "elapsed",
       label: "Elapsed Timer",
@@ -143,9 +137,9 @@ export default function ConfigureScreen() {
               shouldMute
             />
             {/* Draggable Overlay Preview on Video */}
-            {overlayConfig.type !== "none" && (
+            {/* {overlayConfig.type !== "none" && (
               <View style={styles.overlayContainer} pointerEvents="box-none">
-                <GestureDetector gesture={panGesture}>
+               
                   <Animated.View
                     style={[animatedOverlayStyle, { position: "absolute" }]}
                   >
@@ -156,23 +150,9 @@ export default function ConfigureScreen() {
                       videoHeight={videoHeight}
                     />
                   </Animated.View>
-                </GestureDetector>
+       
               </View>
-            )}
-          </View>
-          <View style={styles.videoInfo}>
-            <ThemedText style={styles.videoInfoText}>
-              {sourceVideo.fileName || "Imported video"}
-            </ThemedText>
-            <ThemedText style={styles.videoInfoText}>
-              {Math.round(sourceVideo.duration)}s •{" "}
-              {sourceVideo.dimensions.width}×{sourceVideo.dimensions.height}
-            </ThemedText>
-            {overlayConfig.type !== "none" && (
-              <ThemedText style={styles.videoInfoHint}>
-                Preview shows overlay at 5s
-              </ThemedText>
-            )}
+            )} */}
           </View>
         </View>
 
@@ -297,6 +277,7 @@ const styles = StyleSheet.create({
   },
   videoSection: {
     marginBottom: 32,
+    marginHorizontal: -24,
   },
   videoContainer: {
     position: "relative",
@@ -304,10 +285,7 @@ const styles = StyleSheet.create({
   },
   videoPlayer: {
     width: "100%",
-    aspectRatio: 16 / 9,
-    backgroundColor: "#000",
-    borderWidth: 1,
-    borderColor: "#000",
+    aspectRatio: 16 / 10,
     borderRadius: 0,
   },
   overlayContainer: {

@@ -148,6 +148,3 @@ export const useVideoStore = create<VideoStore>((set) => ({
       },
     }),
 }));
-
-// Export default overlay config for use in other parts of the app
-export { DEFAULT_OVERLAY_CONFIG };

@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import type { VideoSource } from 'expo-video';
@@ -32,6 +31,7 @@ export function VideoPlayer({
         allowsFullscreen
         allowsPictureInPicture={false}
         nativeControls={showControls}
+        contentFit="contain"
       />
     </View>
   );
@@ -41,12 +41,13 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     aspectRatio: 16 / 9,
-    backgroundColor: '#000',
+    backgroundColor: 'transparent',
     borderRadius: 8,
     overflow: 'hidden',
   },
   video: {
     width: '100%',
     height: '100%',
+    backgroundColor: 'transparent',
   },
 });
