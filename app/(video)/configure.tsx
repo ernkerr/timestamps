@@ -5,6 +5,7 @@ import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { TimerEditor } from '@/components/video/TimerEditor';
 import { TimestampEditor } from '@/components/video/TimestampEditor';
 import { TextEditor } from '@/components/video/TextEditor';
+import { StyleEditor } from '@/components/video/StyleEditor';
 import { useVideoStore } from '@/lib/store/videoStore';
 import type { OverlayType } from '@/lib/types/overlay';
 
