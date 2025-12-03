@@ -4,6 +4,7 @@ import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, runOnJS } from 'react-native-reanimated';
 import { ThemedText } from '@/components/themed-text';
 import { useVideoStore } from '@/lib/store/videoStore';
+import { formatElapsedTime, formatTimeOfDayTimestamp } from '@/lib/utils/timeFormatters';
 
 const PREVIEW_WIDTH = 320;
 const PREVIEW_HEIGHT = 180;
@@ -11,6 +12,32 @@ const OVERLAY_SIZE = 40; // Size of draggable overlay indicator
 
 export function PositionControl() {
   const { overlayConfig, updateOverlayConfig } = useVideoStore();
+
+  // Get display text based on overlay type
+  const getDisplayText = () => {
+    const showSeconds = overlayConfig.showSeconds ?? true;
+
+    switch (overlayConfig.type) {
+      case 'elapsed':
+        return formatElapsedTime(5, true, showSeconds); // Preview at 5 seconds
+      case 'timestamp':
+        if (overlayConfig.timestamp) {
+          return formatTimeOfDayTimestamp(
+            5,
+            overlayConfig.timestamp.realWorldStartTime,
+            overlayConfig.timestamp.timelapseSpeed,
+            overlayConfig.timestamp.format
+          );
+        }
+        return '9:00 AM';
+      case 'text':
+        return overlayConfig.text || 'Text';
+      default:
+        return '';
+    }
+  };
+
+  const displayText = getDisplayText();
 
   // Convert percentage position to pixels
   const initialX = overlayConfig.position.x * PREVIEW_WIDTH - OVERLAY_SIZE / 2;
@@ -75,8 +102,27 @@ export function PositionControl() {
 
             {/* Draggable overlay indicator */}
             <GestureDetector gesture={panGesture}>
-              <Animated.View style={[styles.overlayIndicator, animatedStyle]}>
-                <Text style={styles.overlayText}>00:00</Text>
+              <Animated.View
+                style={[
+                  styles.overlayIndicator,
+                  animatedStyle,
+                  overlayConfig.backgroundColor && {
+                    backgroundColor: overlayConfig.backgroundColor,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.overlayText,
+                    {
+                      fontSize: Math.min(overlayConfig.fontSize * 0.4, 14),
+                      color: overlayConfig.color,
+                      fontFamily: overlayConfig.fontFamily === 'System' ? undefined : overlayConfig.fontFamily,
+                    },
+                  ]}
+                >
+                  {displayText}
+                </Text>
               </Animated.View>
             </GestureDetector>
           </View>
@@ -169,19 +215,21 @@ const styles = StyleSheet.create({
   },
   overlayIndicator: {
     position: 'absolute',
-    width: OVERLAY_SIZE,
-    height: OVERLAY_SIZE,
-    backgroundColor: '#FFFFFF',
+    minWidth: OVERLAY_SIZE,
+    minHeight: 24,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#000',
+    borderColor: '#FFF',
   },
   overlayText: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#000',
+    color: '#FFF',
     fontVariant: ['tabular-nums'],
   },
   positionInfo: {

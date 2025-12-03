@@ -26,7 +26,7 @@ export function OverlayPreview({
     case 'elapsed':
       if (config.elapsedTimer) {
         const elapsedTime = Math.max(0, currentTime - config.elapsedTimer.startTime);
-        overlayText = formatElapsedTime(elapsedTime, true);
+        overlayText = formatElapsedTime(elapsedTime, true, config.showSeconds ?? true);
       }
       break;
 
