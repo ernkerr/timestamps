@@ -1,17 +1,47 @@
 import { create } from 'zustand';
 import type { SourceVideo, ExportState, ExportSettings, SavedProject } from '../types/video';
-import type { OverlayConfig } from '../types/overlay';
+import type { OverlayConfig, OverlayType } from '../types/overlay';
 
-const DEFAULT_OVERLAY_CONFIG: OverlayConfig = {
-  type: 'elapsed',
-  position: { x: 0.05, y: 0.05 }, // Top-left, 5% from edges
-  fontSize: 32,
-  fontFamily: 'System',
-  color: '#FFFFFF',
-  backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  elapsedTimer: {
-    startTime: 0, // Start from beginning of video
-  },
+const createDefaultOverlay = (type: OverlayType, index: number = 0): OverlayConfig => {
+  const baseConfig = {
+    id: `${type}-${Date.now()}-${index}`,
+    type,
+    position: { x: 0.5, y: 0.5 }, // Center of video
+    fontSize: 32,
+    fontFamily: 'System',
+    color: '#FFFFFF',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  };
+
+  switch (type) {
+    case 'elapsed':
+      return {
+        ...baseConfig,
+        elapsedTimer: {
+          startTime: 0,
+        },
+      };
+    case 'timestamp':
+      return {
+        ...baseConfig,
+        timestamp: {
+          realWorldStartTime: new Date(),
+          timelapseSpeed: 120,
+          format: '12h',
+        },
+      };
+    case 'text':
+      return {
+        ...baseConfig,
+        text: 'Custom Text',
+        textOverlay: {
+          text: 'Custom Text',
+        },
+      };
+    case 'none':
+    default:
+      return baseConfig;
+  }
 };
 
 const INITIAL_EXPORT_STATE: ExportState = {
@@ -27,10 +57,15 @@ interface VideoStore {
   setSourceVideo: (video: SourceVideo | null) => void;
 
   // Overlay configuration
-  overlayConfig: OverlayConfig;
-  setOverlayType: (type: OverlayConfig['type']) => void;
-  updateOverlayConfig: (updates: Partial<OverlayConfig>) => void;
-  resetOverlayConfig: () => void;
+  overlays: OverlayConfig[];
+  selectedOverlayId: string | null;
+  addOverlay: (type: OverlayType) => void;
+  removeOverlay: (id: string) => void;
+  toggleOverlayType: (type: OverlayType) => void;
+  updateOverlay: (id: string, updates: Partial<OverlayConfig>) => void;
+  selectOverlay: (id: string | null) => void;
+  hasOverlayType: (type: OverlayType) => boolean;
+  resetOverlays: () => void;
 
   // Export state
   exportState: ExportState;
@@ -52,10 +87,11 @@ interface VideoStore {
   reset: () => void;
 }
 
-export const useVideoStore = create<VideoStore>((set) => ({
+export const useVideoStore = create<VideoStore>((set, get) => ({
   // Initial state
   sourceVideo: null,
-  overlayConfig: DEFAULT_OVERLAY_CONFIG,
+  overlays: [],
+  selectedOverlayId: null,
   exportState: INITIAL_EXPORT_STATE,
   exportSettings: {
     codec: 'h264',
@@ -67,17 +103,63 @@ export const useVideoStore = create<VideoStore>((set) => ({
   setSourceVideo: (video) => set({ sourceVideo: video }),
 
   // Overlay configuration actions
-  setOverlayType: (type) =>
+  addOverlay: (type) =>
+    set((state) => {
+      const newOverlay = createDefaultOverlay(type, state.overlays.length);
+      return {
+        overlays: [...state.overlays, newOverlay],
+        selectedOverlayId: newOverlay.id,
+      };
+    }),
+
+  removeOverlay: (id) =>
+    set((state) => {
+      const newOverlays = state.overlays.filter((o) => o.id !== id);
+      return {
+        overlays: newOverlays,
+        selectedOverlayId: state.selectedOverlayId === id ? null : state.selectedOverlayId,
+      };
+    }),
+
+  toggleOverlayType: (type) =>
+    set((state) => {
+      if (type === 'none') {
+        return { overlays: [], selectedOverlayId: null };
+      }
+
+      const existingOverlay = state.overlays.find((o) => o.type === type);
+      if (existingOverlay) {
+        // Remove if exists
+        const newOverlays = state.overlays.filter((o) => o.type !== type);
+        return {
+          overlays: newOverlays,
+          selectedOverlayId: state.selectedOverlayId === existingOverlay.id ? null : state.selectedOverlayId,
+        };
+      } else {
+        // Add if doesn't exist
+        const newOverlay = createDefaultOverlay(type, state.overlays.length);
+        return {
+          overlays: [...state.overlays, newOverlay],
+          selectedOverlayId: newOverlay.id,
+        };
+      }
+    }),
+
+  updateOverlay: (id, updates) =>
     set((state) => ({
-      overlayConfig: { ...state.overlayConfig, type },
+      overlays: state.overlays.map((o) =>
+        o.id === id ? { ...o, ...updates } : o
+      ),
     })),
 
-  updateOverlayConfig: (updates) =>
-    set((state) => ({
-      overlayConfig: { ...state.overlayConfig, ...updates },
-    })),
+  selectOverlay: (id) => set({ selectedOverlayId: id }),
 
-  resetOverlayConfig: () => set({ overlayConfig: DEFAULT_OVERLAY_CONFIG }),
+  hasOverlayType: (type) => {
+    const state = get();
+    return state.overlays.some((o) => o.type === type);
+  },
+
+  resetOverlays: () => set({ overlays: [], selectedOverlayId: null }),
 
   // Export settings actions
   setExportSettings: (settings) =>
@@ -140,7 +222,8 @@ export const useVideoStore = create<VideoStore>((set) => ({
   reset: () =>
     set({
       sourceVideo: null,
-      overlayConfig: DEFAULT_OVERLAY_CONFIG,
+      overlays: [],
+      selectedOverlayId: null,
       exportState: INITIAL_EXPORT_STATE,
       exportSettings: {
         codec: 'h264',

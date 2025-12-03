@@ -2,13 +2,22 @@ import { View, StyleSheet, TextInput } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { useVideoStore } from '@/lib/store/videoStore';
 
-export function TextEditor() {
-  const { overlayConfig, updateOverlayConfig } = useVideoStore();
+interface TextEditorProps {
+  overlayId: string;
+}
+
+export function TextEditor({ overlayId }: TextEditorProps) {
+  const { overlays, updateOverlay } = useVideoStore();
+  const overlayConfig = overlays.find(o => o.id === overlayId);
+
+  if (!overlayConfig) {
+    return null;
+  }
 
   const text = overlayConfig.text || '';
 
   const handleTextChange = (newText: string) => {
-    updateOverlayConfig({
+    updateOverlay(overlayId, {
       text: newText,
     });
   };

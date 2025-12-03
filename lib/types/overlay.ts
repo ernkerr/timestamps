@@ -28,6 +28,7 @@ export interface TextConfig {
 }
 
 export interface BaseOverlayConfig {
+  id: string; // Unique identifier for each overlay
   type: OverlayType;
   position: Position;
   fontSize: number;
@@ -47,6 +48,11 @@ export interface OverlayConfig extends BaseOverlayConfig {
 
   // Text-specific config (only present when type is 'text')
   textOverlay?: TextConfig;
+}
+
+// Configuration that contains all overlays
+export interface VideoOverlayConfig {
+  overlays: OverlayConfig[];
 }
 
 export interface OverlayPreset {

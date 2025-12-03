@@ -3,26 +3,35 @@ import { ThemedText } from '@/components/themed-text';
 import { useVideoStore } from '@/lib/store/videoStore';
 import { AVAILABLE_FONTS, FONT_SIZES, PRESET_COLORS, BACKGROUND_OPACITIES } from '@/lib/constants/fonts';
 
-export function StyleEditor() {
-  const { overlayConfig, updateOverlayConfig } = useVideoStore();
+interface StyleEditorProps {
+  overlayId: string;
+}
+
+export function StyleEditor({ overlayId }: StyleEditorProps) {
+  const { overlays, updateOverlay } = useVideoStore();
+  const overlayConfig = overlays.find(o => o.id === overlayId);
+
+  if (!overlayConfig) {
+    return null;
+  }
 
   const handleFontChange = (fontFamily: string) => {
-    updateOverlayConfig({ fontFamily });
+    updateOverlay(overlayId, { fontFamily });
   };
 
   const handleFontSizeChange = (fontSize: number) => {
-    updateOverlayConfig({ fontSize });
+    updateOverlay(overlayId, { fontSize });
   };
 
   const handleColorChange = (color: string) => {
-    updateOverlayConfig({ color });
+    updateOverlay(overlayId, { color });
   };
 
   const handleBackgroundOpacityChange = (opacity: number) => {
     if (opacity === 0) {
-      updateOverlayConfig({ backgroundColor: undefined });
+      updateOverlay(overlayId, { backgroundColor: undefined });
     } else {
-      updateOverlayConfig({ backgroundColor: `rgba(0, 0, 0, ${opacity})` });
+      updateOverlay(overlayId, { backgroundColor: `rgba(0, 0, 0, ${opacity})` });
     }
   };
 

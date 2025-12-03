@@ -3,10 +3,15 @@ import { ThemedText } from '@/components/themed-text';
 import { useVideoStore } from '@/lib/store/videoStore';
 import { formatElapsedTime } from '@/lib/utils/timeFormatters';
 
-export function TimerEditor() {
-  const { overlayConfig, updateOverlayConfig, sourceVideo } = useVideoStore();
+interface TimerEditorProps {
+  overlayId: string;
+}
 
-  if (!overlayConfig.elapsedTimer) {
+export function TimerEditor({ overlayId }: TimerEditorProps) {
+  const { overlays, updateOverlay, sourceVideo } = useVideoStore();
+  const overlayConfig = overlays.find(o => o.id === overlayId);
+
+  if (!overlayConfig || !overlayConfig.elapsedTimer) {
     return null;
   }
 
@@ -17,7 +22,7 @@ export function TimerEditor() {
     // Clamp to video duration
     const clampedSeconds = Math.max(0, Math.min(seconds, videoDuration));
 
-    updateOverlayConfig({
+    updateOverlay(overlayId, {
       elapsedTimer: {
         startTime: clampedSeconds,
       },

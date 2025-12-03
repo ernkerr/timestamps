@@ -1,5 +1,4 @@
 import { ThemedText } from "@/components/themed-text";
-import { OverlayPreview } from "@/components/video/OverlayPreview";
 import { PositionControl } from "@/components/video/PositionControl";
 import { StyleEditor } from "@/components/video/StyleEditor";
 import { TextEditor } from "@/components/video/TextEditor";
@@ -10,69 +9,26 @@ import { useVideoStore } from "@/lib/store/videoStore";
 import type { OverlayType } from "@/lib/types/overlay";
 import { useRouter } from "expo-router";
 import {
-  Dimensions,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-} from "react-native-reanimated";
 
 export default function ConfigureScreen() {
   const router = useRouter();
-  const { sourceVideo, overlayConfig, setOverlayType, updateOverlayConfig } =
-    useVideoStore();
+  const {
+    sourceVideo,
+    overlays,
+    selectedOverlayId,
+    toggleOverlayType,
+    hasOverlayType,
+    selectOverlay,
+    updateOverlay
+  } = useVideoStore();
 
-  // Video dimensions for overlay positioning
-  const videoWidth = Dimensions.get("window").width;
-  const videoHeight = videoWidth * (10 / 16);
-
-  // Calculate position in pixels from percentage
-  const positionX = overlayConfig.position.x * videoWidth;
-  const positionY = overlayConfig.position.y * videoHeight;
-
-  // Shared values for drag offset only
-  const offsetX = useSharedValue(0);
-  const offsetY = useSharedValue(0);
-
-  // const panGesture = Gesture.Pan()
-  //   .onStart(() => {
-  //     // Reset offset when starting a new drag
-  //     offsetX.value = 0;
-  //     offsetY.value = 0;
-  //   })
-  //   .onUpdate((event) => {
-  //     offsetX.value = event.translationX;
-  //     offsetY.value = event.translationY;
-  //   })
-  //   .onEnd((event) => {
-  //     // Calculate final position
-  //     const newX = Math.max(
-  //       0,
-  //       Math.min(videoWidth, positionX + event.translationX)
-  //     );
-  //     const newY = Math.max(
-  //       0,
-  //       Math.min(videoHeight, positionY + event.translationY)
-  //     );
-
-  //     // Convert to percentage
-  //     const percentX = newX / videoWidth;
-  //     const percentY = newY / videoHeight;
-
-  //     // Update position in store (this will trigger a re-render with new positionX/Y)
-  //   });
-
-  const animatedOverlayStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: positionX + offsetX.value },
-      { translateY: positionY + offsetY.value },
-    ],
-  }));
+  // Get the currently selected overlay for editing
+  const selectedOverlay = overlays.find(o => o.id === selectedOverlayId) || overlays[0];
 
   if (!sourceVideo) {
     return (
@@ -136,23 +92,6 @@ export default function ConfigureScreen() {
               shouldLoop
               shouldMute
             />
-            {/* Draggable Overlay Preview on Video */}
-            {/* {overlayConfig.type !== "none" && (
-              <View style={styles.overlayContainer} pointerEvents="box-none">
-               
-                  <Animated.View
-                    style={[animatedOverlayStyle, { position: "absolute" }]}
-                  >
-                    <OverlayPreview
-                      config={overlayConfig}
-                      currentTime={5} // Show preview at 5 seconds
-                      videoWidth={videoWidth}
-                      videoHeight={videoHeight}
-                    />
-                  </Animated.View>
-       
-              </View>
-            )} */}
           </View>
         </View>
 
@@ -164,67 +103,111 @@ export default function ConfigureScreen() {
           </View>
 
           <View style={styles.typeGrid}>
-            {overlayTypes.map((item) => (
-              <TouchableOpacity
-                key={item.type}
-                style={[
-                  styles.typeCard,
-                  overlayConfig.type === item.type && styles.typeCardActive,
-                ]}
-                onPress={() => setOverlayType(item.type)}
-                activeOpacity={0.7}
-              >
-                <ThemedText
+            {overlayTypes.map((item) => {
+              const isSelected = item.type === 'none'
+                ? overlays.length === 0
+                : hasOverlayType(item.type);
+
+              return (
+                <TouchableOpacity
+                  key={item.type}
                   style={[
-                    styles.typeLabel,
-                    overlayConfig.type === item.type && styles.typeLabelActive,
+                    styles.typeCard,
+                    isSelected && styles.typeCardActive,
                   ]}
+                  onPress={() => toggleOverlayType(item.type)}
+                  activeOpacity={0.7}
                 >
-                  {item.label}
-                </ThemedText>
-                <ThemedText
-                  style={[
-                    styles.typeDescription,
-                    overlayConfig.type === item.type &&
-                      styles.typeDescriptionActive,
-                  ]}
-                >
-                  {item.description}
-                </ThemedText>
-              </TouchableOpacity>
-            ))}
+                  <ThemedText
+                    style={[
+                      styles.typeLabel,
+                      isSelected && styles.typeLabelActive,
+                    ]}
+                  >
+                    {item.label}
+                  </ThemedText>
+                  <ThemedText
+                    style={[
+                      styles.typeDescription,
+                      isSelected && styles.typeDescriptionActive,
+                    ]}
+                  >
+                    {item.description}
+                  </ThemedText>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
         {/* Overlay Configuration */}
-        {overlayConfig.type !== "none" && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionDot} />
-              <ThemedText style={styles.sectionTitle}>SETTINGS</ThemedText>
+        {overlays.length > 0 && selectedOverlay && (
+          <>
+            {/* Overlay Selector */}
+            {overlays.length > 1 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <View style={styles.sectionDot} />
+                  <ThemedText style={styles.sectionTitle}>
+                    EDITING OVERLAY
+                  </ThemedText>
+                </View>
+                <ScrollView
+                  horizontal
+                  style={styles.overlaySelector}
+                  showsHorizontalScrollIndicator={false}
+                >
+                  {overlays.map((overlay) => (
+                    <TouchableOpacity
+                      key={overlay.id}
+                      style={[
+                        styles.overlayTab,
+                        overlay.id === selectedOverlayId && styles.overlayTabActive,
+                      ]}
+                      onPress={() => selectOverlay(overlay.id)}
+                      activeOpacity={0.7}
+                    >
+                      <ThemedText
+                        style={[
+                          styles.overlayTabText,
+                          overlay.id === selectedOverlayId && styles.overlayTabTextActive,
+                        ]}
+                      >
+                        {overlay.type.charAt(0).toUpperCase() + overlay.type.slice(1)}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Settings for Selected Overlay */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionDot} />
+                <ThemedText style={styles.sectionTitle}>SETTINGS</ThemedText>
+              </View>
+
+              {selectedOverlay.type === "elapsed" && <TimerEditor overlayId={selectedOverlay.id} />}
+              {selectedOverlay.type === "timestamp" && <TimestampEditor overlayId={selectedOverlay.id} />}
+              {selectedOverlay.type === "text" && <TextEditor overlayId={selectedOverlay.id} />}
             </View>
 
-            {overlayConfig.type === "elapsed" && <TimerEditor />}
-            {overlayConfig.type === "timestamp" && <TimestampEditor />}
-            {overlayConfig.type === "text" && <TextEditor />}
-          </View>
-        )}
+            {/* Style Customization */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionDot} />
+                <ThemedText style={styles.sectionTitle}>APPEARANCE</ThemedText>
+              </View>
 
-        {/* Style Customization */}
-        {overlayConfig.type !== "none" && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionDot} />
-              <ThemedText style={styles.sectionTitle}>APPEARANCE</ThemedText>
+              <StyleEditor overlayId={selectedOverlay.id} />
+
+              {/* Divider */}
+              <View style={styles.divider} />
+
+              <PositionControl overlayId={selectedOverlay.id} />
             </View>
-
-            <StyleEditor />
-
-            {/* Divider */}
-            <View style={styles.divider} />
-
-            <PositionControl />
-          </View>
+          </>
         )}
       </ScrollView>
 
@@ -366,6 +349,31 @@ const styles = StyleSheet.create({
   },
   typeDescriptionActive: {
     color: "rgba(255, 255, 255, 0.7)",
+  },
+  overlaySelector: {
+    flexDirection: "row",
+  },
+  overlayTab: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 20,
+    backgroundColor: "#fff",
+  },
+  overlayTabActive: {
+    borderColor: "#000",
+    backgroundColor: "#000",
+  },
+  overlayTabText: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#666",
+    letterSpacing: 0.3,
+  },
+  overlayTabTextActive: {
+    color: "#fff",
   },
   divider: {
     height: 1,

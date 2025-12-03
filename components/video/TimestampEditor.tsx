@@ -6,12 +6,18 @@ import { useVideoStore } from '@/lib/store/videoStore';
 import { formatTimeOfDayTimestamp } from '@/lib/utils/timeFormatters';
 import type { TimestampFormat } from '@/lib/types/overlay';
 
-export function TimestampEditor() {
-  const { overlayConfig, updateOverlayConfig, sourceVideo } = useVideoStore();
+interface TimestampEditorProps {
+  overlayId: string;
+}
+
+export function TimestampEditor({ overlayId }: TimestampEditorProps) {
+  const { overlays, updateOverlay, sourceVideo } = useVideoStore();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  if (!overlayConfig.timestamp) {
+  const overlayConfig = overlays.find(o => o.id === overlayId);
+
+  if (!overlayConfig || !overlayConfig.timestamp) {
     return null;
   }
 
@@ -22,7 +28,7 @@ export function TimestampEditor() {
   const format = timestamp.format || '12h';
 
   const handleRealWorldStartTimeChange = (date: Date) => {
-    updateOverlayConfig({
+    updateOverlay(overlayId, {
       timestamp: {
         ...timestamp,
         realWorldStartTime: date,
@@ -31,7 +37,7 @@ export function TimestampEditor() {
   };
 
   const handleTimelapseSpeedChange = (speed: number) => {
-    updateOverlayConfig({
+    updateOverlay(overlayId, {
       timestamp: {
         ...timestamp,
         timelapseSpeed: Math.max(1, speed),
@@ -40,7 +46,7 @@ export function TimestampEditor() {
   };
 
   const handleFormatChange = (newFormat: TimestampFormat) => {
-    updateOverlayConfig({
+    updateOverlay(overlayId, {
       timestamp: {
         ...timestamp,
         format: newFormat,
