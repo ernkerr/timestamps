@@ -1,98 +1,184 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useVideoStore } from '@/lib/store/videoStore';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter();
+  const { setSourceVideo } = useVideoStore();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const handleImportVideo = async () => {
+    try {
+      // Request permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please grant photo library access to import videos.'
+        );
+        return;
+      }
+
+      // Launch image picker for videos
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['videos'],
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const video = result.assets[0];
+
+        // Store video in state
+        setSourceVideo({
+          uri: video.uri,
+          duration: video.duration || 0,
+          dimensions: {
+            width: video.width,
+            height: video.height,
+          },
+          fileName: video.fileName ?? undefined,
+          fileSize: video.fileSize,
+        });
+
+        // Navigate to configure screen
+        router.push('/(video)/configure');
+      }
+    } catch (error) {
+      console.error('Error importing video:', error);
+      Alert.alert('Error', 'Failed to import video. Please try again.');
+    }
+  };
+
+  const handleRecordVideo = async () => {
+    // TODO: Implement camera recording
+    Alert.alert('Coming Soon', 'Video recording will be implemented next!');
+  };
+
+  return (
+    <ThemedView style={styles.container}>
+      <View style={styles.content}>
+        {/* Header */}
+        <View style={styles.header}>
+          <IconSymbol name="video.fill" size={64} color="#007AFF" />
+          <ThemedText type="title" style={styles.title}>
+            Timestamps
+          </ThemedText>
+          <ThemedText style={styles.subtitle}>
+            Add timers and timestamps to your videos
+          </ThemedText>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleImportVideo}
+            activeOpacity={0.7}
+          >
+            <View style={styles.iconContainer}>
+              <IconSymbol name="photo.on.rectangle" size={48} color="#fff" />
+            </View>
+            <ThemedText style={styles.actionTitle}>Import Video</ThemedText>
+            <ThemedText style={styles.actionSubtitle}>
+              Choose from your library
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleRecordVideo}
+            activeOpacity={0.7}
+          >
+            <View style={styles.iconContainer}>
+              <IconSymbol name="video.badge.plus" size={48} color="#fff" />
+            </View>
+            <ThemedText style={styles.actionTitle}>Record Video</ThemedText>
+            <ThemedText style={styles.actionSubtitle}>
+              Capture a new video
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        {/* Instructions */}
+        <View style={styles.instructions}>
+          <ThemedText style={styles.instructionText}>
+            1. Import or record a video
+          </ThemedText>
+          <ThemedText style={styles.instructionText}>
+            2. Configure your overlay (timer, timestamp, or text)
+          </ThemedText>
+          <ThemedText style={styles.instructionText}>
+            3. Preview and export your video
+          </ThemedText>
+        </View>
+      </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
+  content: {
+    flex: 1,
+    padding: 20,
+    paddingTop: 60,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  title: {
+    marginTop: 16,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  subtitle: {
+    opacity: 0.6,
+    textAlign: 'center',
+  },
+  actions: {
+    gap: 16,
+    marginBottom: 40,
+  },
+  actionButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  iconContainer: {
+    marginBottom: 12,
+  },
+  actionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  actionSubtitle: {
+    fontSize: 14,
+    color: '#fff',
+    opacity: 0.8,
+  },
+  instructions: {
+    padding: 20,
+    backgroundColor: 'rgba(0, 122, 255, 0.05)',
+    borderRadius: 12,
+    gap: 12,
+  },
+  instructionText: {
+    fontSize: 15,
+    lineHeight: 22,
   },
 });
