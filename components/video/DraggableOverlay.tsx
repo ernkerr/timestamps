@@ -64,6 +64,10 @@ export function DraggableOverlay({
       const percentX = Math.max(0, Math.min(1, translateX.value / videoWidth));
       const percentY = Math.max(0, Math.min(1, translateY.value / videoHeight));
 
+      // Update shared values to the clamped position to prevent jump
+      translateX.value = percentX * videoWidth;
+      translateY.value = percentY * videoHeight;
+
       runOnJS(onPositionChange)({ x: percentX, y: percentY });
     });
 

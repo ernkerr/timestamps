@@ -7,7 +7,7 @@ const createDefaultOverlay = (type: OverlayType, index: number = 0): OverlayConf
     id: `${type}-${Date.now()}-${index}`,
     type,
     position: { x: 0.5, y: 0.5 }, // Center of video
-    fontSize: 32,
+    fontSize: 24,
     fontFamily: 'System',
     color: '#FFFFFF',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
