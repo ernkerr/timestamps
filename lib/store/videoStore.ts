@@ -28,6 +28,7 @@ interface VideoStore {
 
   // Overlay configuration
   overlayConfig: OverlayConfig;
+  setOverlayType: (type: OverlayConfig['type']) => void;
   updateOverlayConfig: (updates: Partial<OverlayConfig>) => void;
   resetOverlayConfig: () => void;
 
@@ -66,6 +67,11 @@ export const useVideoStore = create<VideoStore>((set) => ({
   setSourceVideo: (video) => set({ sourceVideo: video }),
 
   // Overlay configuration actions
+  setOverlayType: (type) =>
+    set((state) => ({
+      overlayConfig: { ...state.overlayConfig, type },
+    })),
+
   updateOverlayConfig: (updates) =>
     set((state) => ({
       overlayConfig: { ...state.overlayConfig, ...updates },
