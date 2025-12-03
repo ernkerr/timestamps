@@ -36,12 +36,11 @@ export function DraggableOverlay({
   onDelete,
   onEdit,
 }: DraggableOverlayProps) {
-  // Convert percentage position to pixels
-  const initialX = config.position.x * videoWidth;
-  const initialY = config.position.y * videoHeight;
-
-  const translateX = useSharedValue(initialX);
-  const translateY = useSharedValue(initialY);
+  // Use shared values for position tracking
+  const translateX = useSharedValue(config.position.x * videoWidth);
+  const translateY = useSharedValue(config.position.y * videoHeight);
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
 
   // Update position when config changes externally (e.g., preset buttons)
   useEffect(() => {
@@ -50,39 +49,20 @@ export function DraggableOverlay({
   }, [config.position.x, config.position.y, videoWidth, videoHeight]);
 
   const panGesture = Gesture.Pan()
-    .onUpdate((e) => {
-      // Constrain to bounds (same as PositionControl)
-      const newX = Math.max(
-        -OVERLAY_SIZE / 2,
-        Math.min(videoWidth - OVERLAY_SIZE / 2, e.translationX + initialX)
-      );
-      const newY = Math.max(
-        -OVERLAY_SIZE / 2,
-        Math.min(videoHeight - OVERLAY_SIZE / 2, e.translationY + initialY)
-      );
-
-      translateX.value = newX;
-      translateY.value = newY;
+    .onStart(() => {
+      startX.value = translateX.value;
+      startY.value = translateY.value;
     })
-    .onEnd((e) => {
+    .onUpdate((e) => {
+      // Update position during drag
+      translateX.value = startX.value + e.translationX;
+      translateY.value = startY.value + e.translationY;
+    })
+    .onEnd(() => {
       // Convert pixels back to percentage
-      const finalX = Math.max(
-        -OVERLAY_SIZE / 2,
-        Math.min(videoWidth - OVERLAY_SIZE / 2, e.translationX + initialX)
-      );
-      const finalY = Math.max(
-        -OVERLAY_SIZE / 2,
-        Math.min(videoHeight - OVERLAY_SIZE / 2, e.translationY + initialY)
-      );
-
-      const percentX = Math.max(
-        0,
-        Math.min(1, (finalX + OVERLAY_SIZE / 2) / videoWidth)
-      );
-      const percentY = Math.max(
-        0,
-        Math.min(1, (finalY + OVERLAY_SIZE / 2) / videoHeight)
-      );
+      // Clamp to ensure we stay within bounds
+      const percentX = Math.max(0, Math.min(1, translateX.value / videoWidth));
+      const percentY = Math.max(0, Math.min(1, translateY.value / videoHeight));
 
       runOnJS(onPositionChange)({ x: percentX, y: percentY });
     });
@@ -117,6 +97,8 @@ export function DraggableOverlay({
             top: 0,
           },
         ]}
+        onStartShouldSetResponder={() => true}
+        onResponderTerminationRequest={() => false}
       >
         <OverlayPreview
           config={modifiedConfig}
@@ -131,7 +113,10 @@ export function DraggableOverlay({
             {/* Delete button (top-left) */}
             {onDelete && (
               <TouchableOpacity
-                onPress={onDelete}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
                 className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-black items-center justify-center border-2 border-white"
                 activeOpacity={0.7}
               >
@@ -142,7 +127,10 @@ export function DraggableOverlay({
             {/* Edit button (top-right) */}
             {onEdit && (
               <TouchableOpacity
-                onPress={onEdit}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
                 className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-black items-center justify-center border-2 border-white"
                 activeOpacity={0.7}
               >
