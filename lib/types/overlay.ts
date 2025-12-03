@@ -15,6 +15,7 @@ export interface Position {
 
 export interface ElapsedTimerConfig {
   startTime: number; // Seconds into video when timer starts (default: 0)
+  timelapseSpeed: number; // Speed multiplier (e.g., 120x means 2 hours shown in 1 minute)
 }
 
 export interface TimestampConfig {

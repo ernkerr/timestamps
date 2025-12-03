@@ -19,6 +19,7 @@ const createDefaultOverlay = (type: OverlayType, index: number = 0): OverlayConf
         ...baseConfig,
         elapsedTimer: {
           startTime: 0,
+          timelapseSpeed: 120,
         },
       };
     case 'timestamp':
