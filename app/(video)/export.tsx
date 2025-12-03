@@ -1,11 +1,62 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useVideoStore } from '@/lib/store/videoStore';
-import { useEffect } from 'react';
+import { useState } from 'react';
+import { exportVideo } from '@/lib/services/videoExport';
 
 export default function ExportScreen() {
   const router = useRouter();
-  const { sourceVideo, exportState, exportSettings } = useVideoStore();
+  const {
+    sourceVideo,
+    overlays,
+    exportState,
+    exportSettings,
+    startExport,
+    updateExportProgress,
+    completeExport,
+    failExport,
+  } = useVideoStore();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (!sourceVideo) {
+      Alert.alert('Error', 'No video selected');
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      startExport();
+
+      const result = await exportVideo({
+        sourceVideoUri: sourceVideo.uri,
+        overlays,
+        codec: exportSettings.codec,
+        quality: exportSettings.quality,
+        onProgress: (progress) => {
+          updateExportProgress(progress);
+        },
+      });
+
+      if (result.success && result.outputUri) {
+        completeExport(result.outputUri);
+        Alert.alert(
+          'Success',
+          'Video exported successfully and saved to your photo library!',
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
+      } else {
+        failExport(result.error || 'Unknown error occurred');
+        Alert.alert('Export Failed', result.error || 'Unknown error occurred');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      failExport(errorMessage);
+      Alert.alert('Export Failed', errorMessage);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (!sourceVideo) {
     return (
@@ -77,19 +128,16 @@ export default function ExportScreen() {
             style={[
               styles.button,
               styles.primaryButton,
-              exportState.isExporting && styles.disabledButton,
+              (exportState.isExporting || isExporting) && styles.disabledButton,
             ]}
-            disabled={exportState.isExporting}
+            disabled={exportState.isExporting || isExporting}
+            onPress={handleExport}
           >
             <Text style={styles.primaryButtonText}>
-              {exportState.isExporting ? 'Exporting...' : 'Start Export'}
+              {exportState.isExporting || isExporting ? 'Exporting...' : 'Start Export'}
             </Text>
           </TouchableOpacity>
         </View>
-
-        <Text style={styles.placeholder}>
-          Export functionality will be implemented in Phase 5
-        </Text>
       </View>
     </View>
   );
