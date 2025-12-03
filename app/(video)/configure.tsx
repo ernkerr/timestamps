@@ -1,18 +1,21 @@
+import { useState, useEffect } from "react";
 import { ThemedText } from "@/components/themed-text";
 import { PositionControl } from "@/components/video/PositionControl";
 import { StyleEditor } from "@/components/video/StyleEditor";
 import { TextEditor } from "@/components/video/TextEditor";
 import { TimerEditor } from "@/components/video/TimerEditor";
 import { TimestampEditor } from "@/components/video/TimestampEditor";
-import { VideoPlayer } from "@/components/video/VideoPlayer";
+import { VideoWithOverlays } from "@/components/video/VideoWithOverlays";
 import { useVideoStore } from "@/lib/store/videoStore";
 import type { OverlayType } from "@/lib/types/overlay";
 import { useRouter } from "expo-router";
+import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
+  Text,
 } from "react-native";
 
 export default function ConfigureScreen() {
@@ -24,11 +27,24 @@ export default function ConfigureScreen() {
     toggleOverlayType,
     hasOverlayType,
     selectOverlay,
-    updateOverlay
+    updateOverlay,
+    removeOverlay
   } = useVideoStore();
+
+  // Settings panel state management
+  const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
+
+  // Auto-open/close settings panel based on selection
+  useEffect(() => {
+    setSettingsPanelOpen(!!selectedOverlayId);
+  }, [selectedOverlayId]);
 
   // Get the currently selected overlay for editing
   const selectedOverlay = overlays.find(o => o.id === selectedOverlayId) || overlays[0];
+
+  const handleCloseSettings = () => {
+    selectOverlay(null);
+  };
 
   if (!sourceVideo) {
     return (
@@ -86,9 +102,13 @@ export default function ConfigureScreen() {
         {/* Video Preview */}
         <View style={styles.videoSection}>
           <View style={styles.videoContainer}>
-            <VideoPlayer
+            <VideoWithOverlays
               videoSource={{ uri: sourceVideo.uri }}
-              style={styles.videoPlayer}
+              overlays={overlays}
+              selectedOverlayId={selectedOverlayId}
+              onOverlaySelect={selectOverlay}
+              onOverlayPositionChange={(id, pos) => updateOverlay(id, { position: pos })}
+              onOverlayDelete={removeOverlay}
               shouldLoop
               shouldMute
             />
@@ -140,18 +160,32 @@ export default function ConfigureScreen() {
           </View>
         </View>
 
-        {/* Overlay Configuration */}
-        {overlays.length > 0 && selectedOverlay && (
-          <>
-            {/* Overlay Selector */}
+        {/* Settings Panel */}
+        {settingsPanelOpen && selectedOverlay ? (
+          <Animated.View
+            entering={FadeInDown.duration(200)}
+            exiting={FadeOutUp.duration(150)}
+          >
+            {/* Panel Header with Close Button */}
+            <View style={styles.panelHeader}>
+              <View style={styles.panelHeaderLeft}>
+                <View style={styles.sectionDot} />
+                <ThemedText style={styles.panelHeaderTitle}>
+                  EDITING: {selectedOverlay.type.toUpperCase()}
+                </ThemedText>
+              </View>
+              <TouchableOpacity
+                onPress={handleCloseSettings}
+                style={styles.closeButton}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.closeButtonText}>×</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Overlay Selector (if multiple overlays) */}
             {overlays.length > 1 && (
               <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <View style={styles.sectionDot} />
-                  <ThemedText style={styles.sectionTitle}>
-                    EDITING OVERLAY
-                  </ThemedText>
-                </View>
                 <ScrollView
                   horizontal
                   style={styles.overlaySelector}
@@ -207,7 +241,16 @@ export default function ConfigureScreen() {
 
               <PositionControl overlayId={selectedOverlay.id} />
             </View>
-          </>
+          </Animated.View>
+        ) : (
+          /* Empty State */
+          overlays.length === 0 && (
+            <View style={styles.emptyState}>
+              <ThemedText style={styles.emptyStateText}>
+                Select an overlay type above to get started
+              </ThemedText>
+            </View>
+          )
         )}
       </ScrollView>
 
@@ -379,6 +422,51 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#E0E0E0",
     marginVertical: 24,
+  },
+  panelHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+  },
+  panelHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  panelHeaderTitle: {
+    fontSize: 11,
+    fontWeight: "400",
+    letterSpacing: 1.5,
+    color: "#000",
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 16,
+    backgroundColor: "#F5F5F5",
+  },
+  closeButtonText: {
+    fontSize: 28,
+    fontWeight: "300",
+    color: "#666",
+    lineHeight: 28,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    fontWeight: "300",
+    color: "#999",
+    textAlign: "center",
   },
   errorContainer: {
     flex: 1,
