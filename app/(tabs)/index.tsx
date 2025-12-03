@@ -2,8 +2,6 @@ import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useVideoStore } from '@/lib/store/videoStore';
 
 export default function HomeScreen() {
@@ -55,38 +53,85 @@ export default function HomeScreen() {
   };
 
   const handleRecordVideo = async () => {
-    // TODO: Implement camera recording
-    Alert.alert('Coming Soon', 'Video recording will be implemented next!');
+    try {
+      // Request camera permissions
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please grant camera access to record videos.'
+        );
+        return;
+      }
+
+      // Launch camera for video recording
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['videos'],
+        allowsEditing: false,
+        quality: 1,
+        videoMaxDuration: 300, // 5 minutes max
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const video = result.assets[0];
+
+        // Store video in state
+        setSourceVideo({
+          uri: video.uri,
+          duration: video.duration || 0,
+          dimensions: {
+            width: video.width,
+            height: video.height,
+          },
+          fileName: video.fileName ?? undefined,
+          fileSize: video.fileSize,
+        });
+
+        // Navigate to configure screen
+        router.push('/(video)/configure');
+      }
+    } catch (error) {
+      console.error('Error recording video:', error);
+      Alert.alert('Error', 'Failed to record video. Please try again.');
+    }
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <IconSymbol name="video.fill" size={64} color="#007AFF" />
-          <ThemedText type="title" style={styles.title}>
-            Timestamps
-          </ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Add timers and timestamps to your videos
+          <View style={styles.brandContainer}>
+            <View style={styles.logoMark} />
+            <ThemedText style={styles.brandText}>TIMESTAMPS</ThemedText>
+          </View>
+          <ThemedText style={styles.tagline}>
+            Add precision timing overlays to video
           </ThemedText>
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actions}>
+        {/* Main Actions */}
+        <View style={styles.mainActions}>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleImportVideo}
             activeOpacity={0.7}
           >
-            <View style={styles.iconContainer}>
-              <IconSymbol name="photo.on.rectangle" size={48} color="#fff" />
+            <View style={styles.actionContent}>
+              <View style={styles.actionNumber}>
+                <ThemedText style={styles.numberText}>01</ThemedText>
+              </View>
+              <View style={styles.actionDetails}>
+                <ThemedText style={styles.actionLabel}>Import</ThemedText>
+                <ThemedText style={styles.actionDescription}>
+                  From library
+                </ThemedText>
+              </View>
+              <View style={styles.actionArrow}>
+                <ThemedText style={styles.arrowText}>→</ThemedText>
+              </View>
             </View>
-            <ThemedText style={styles.actionTitle}>Import Video</ThemedText>
-            <ThemedText style={styles.actionSubtitle}>
-              Choose from your library
-            </ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -94,91 +139,160 @@ export default function HomeScreen() {
             onPress={handleRecordVideo}
             activeOpacity={0.7}
           >
-            <View style={styles.iconContainer}>
-              <IconSymbol name="video.badge.plus" size={48} color="#fff" />
+            <View style={styles.actionContent}>
+              <View style={styles.actionNumber}>
+                <ThemedText style={styles.numberText}>02</ThemedText>
+              </View>
+              <View style={styles.actionDetails}>
+                <ThemedText style={styles.actionLabel}>Record</ThemedText>
+                <ThemedText style={styles.actionDescription}>
+                  New capture
+                </ThemedText>
+              </View>
+              <View style={styles.actionArrow}>
+                <ThemedText style={styles.arrowText}>→</ThemedText>
+              </View>
             </View>
-            <ThemedText style={styles.actionTitle}>Record Video</ThemedText>
-            <ThemedText style={styles.actionSubtitle}>
-              Capture a new video
-            </ThemedText>
           </TouchableOpacity>
         </View>
 
-        {/* Instructions */}
-        <View style={styles.instructions}>
-          <ThemedText style={styles.instructionText}>
-            1. Import or record a video
-          </ThemedText>
-          <ThemedText style={styles.instructionText}>
-            2. Configure your overlay (timer, timestamp, or text)
-          </ThemedText>
-          <ThemedText style={styles.instructionText}>
-            3. Preview and export your video
-          </ThemedText>
+        {/* Process */}
+        <View style={styles.processContainer}>
+          <View style={styles.processHeader}>
+            <View style={styles.processDot} />
+            <ThemedText style={styles.processTitle}>Process</ThemedText>
+          </View>
+          <View style={styles.processSteps}>
+            <ThemedText style={styles.stepText}>Select media</ThemedText>
+            <ThemedText style={styles.stepText}>Configure overlay</ThemedText>
+            <ThemedText style={styles.stepText}>Export result</ThemedText>
+          </View>
         </View>
       </View>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   content: {
     flex: 1,
-    padding: 20,
-    paddingTop: 60,
+    paddingHorizontal: 24,
+    paddingTop: 80,
   },
   header: {
+    marginBottom: 64,
+  },
+  brandContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  subtitle: {
-    opacity: 0.6,
-    textAlign: 'center',
-  },
-  actions: {
-    gap: 16,
-    marginBottom: 40,
-  },
-  actionButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  iconContainer: {
     marginBottom: 12,
   },
-  actionTitle: {
+  logoMark: {
+    width: 4,
+    height: 24,
+    backgroundColor: '#000',
+    marginRight: 12,
+  },
+  brandText: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: '300',
+    letterSpacing: 2,
+    color: '#000',
+  },
+  tagline: {
+    fontSize: 14,
+    fontWeight: '300',
+    color: '#666',
+    letterSpacing: 0.5,
+    lineHeight: 20,
+    maxWidth: 240,
+  },
+  mainActions: {
+    marginBottom: 80,
+    gap: 16,
+  },
+  actionButton: {
+    borderWidth: 1,
+    borderColor: '#000',
+    borderRadius: 0,
+    backgroundColor: '#fff',
+  },
+  actionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 28,
+    paddingHorizontal: 24,
+  },
+  actionNumber: {
+    width: 48,
+    marginRight: 20,
+  },
+  numberText: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#000',
+    letterSpacing: 1,
+  },
+  actionDetails: {
+    flex: 1,
+  },
+  actionLabel: {
+    fontSize: 22,
+    fontWeight: '400',
+    color: '#000',
+    letterSpacing: 0.5,
     marginBottom: 4,
   },
-  actionSubtitle: {
-    fontSize: 14,
-    color: '#fff',
-    opacity: 0.8,
+  actionDescription: {
+    fontSize: 12,
+    fontWeight: '300',
+    color: '#666',
+    letterSpacing: 0.5,
   },
-  instructions: {
-    padding: 20,
-    backgroundColor: 'rgba(0, 122, 255, 0.05)',
-    borderRadius: 12,
-    gap: 12,
+  actionArrow: {
+    marginLeft: 12,
   },
-  instructionText: {
-    fontSize: 15,
-    lineHeight: 22,
+  arrowText: {
+    fontSize: 24,
+    fontWeight: '300',
+    color: '#000',
+  },
+  processContainer: {
+    marginTop: 'auto',
+    paddingBottom: 40,
+  },
+  processHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  processDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#000',
+    marginRight: 10,
+  },
+  processTitle: {
+    fontSize: 11,
+    fontWeight: '400',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: '#000',
+  },
+  processSteps: {
+    paddingLeft: 16,
+    gap: 8,
+  },
+  stepText: {
+    fontSize: 13,
+    fontWeight: '300',
+    color: '#666',
+    letterSpacing: 0.3,
+    lineHeight: 20,
   },
 });
