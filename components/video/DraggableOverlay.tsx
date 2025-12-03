@@ -1,14 +1,14 @@
-import { useEffect } from 'react';
-import { TouchableOpacity } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useEffect } from "react";
+import { TouchableOpacity, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   runOnJS,
-} from 'react-native-reanimated';
-import { X, Pencil } from 'lucide-react-native';
-import { OverlayPreview } from './OverlayPreview';
-import type { OverlayConfig } from '@/lib/types/overlay';
+} from "react-native-reanimated";
+import { X, Pencil } from "lucide-react-native";
+import { OverlayPreview } from "./OverlayPreview";
+import type { OverlayConfig } from "@/lib/types/overlay";
 
 interface DraggableOverlayProps {
   config: OverlayConfig;
@@ -89,7 +89,7 @@ export function DraggableOverlay({
   return (
     <GestureDetector gesture={composedGesture}>
       <Animated.View
-        className={`absolute ${isSelected ? 'border-2 border-white rounded' : ''}`}
+        className="absolute"
         style={[
           animatedStyle,
           {
@@ -100,44 +100,91 @@ export function DraggableOverlay({
         onStartShouldSetResponder={() => true}
         onResponderTerminationRequest={() => false}
       >
-        <OverlayPreview
-          config={modifiedConfig}
-          currentTime={currentTime}
-          videoWidth={videoWidth}
-          videoHeight={videoHeight}
-        />
+        {/* White border wrapper when selected */}
+        {isSelected ? (
+          <View style={{ position: "relative", alignSelf: "flex-start" }}>
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: "white",
 
-        {/* Action buttons when selected */}
-        {isSelected && (
-          <>
-            {/* Delete button (top-left) */}
+                padding: 8,
+              }}
+            >
+              <OverlayPreview
+                config={modifiedConfig}
+                currentTime={currentTime}
+                videoWidth={videoWidth}
+                videoHeight={videoHeight}
+                inline={true}
+              />
+            </View>
+
+            {/* Delete button (left corner, outside border) */}
             {onDelete && (
               <TouchableOpacity
                 onPress={(e) => {
                   e.stopPropagation();
                   onDelete();
                 }}
-                className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-black items-center justify-center border-2 border-white"
+                style={{
+                  position: "absolute",
+                  top: -10,
+                  left: -10,
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  backgroundColor: "#000",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 2,
+                  elevation: 3,
+                }}
                 activeOpacity={0.7}
               >
-                <X color="white" size={16} />
+                <X color="white" size={14} />
               </TouchableOpacity>
             )}
 
-            {/* Edit button (top-right) */}
+            {/* Edit button (right corner, outside border) */}
             {onEdit && (
               <TouchableOpacity
                 onPress={(e) => {
                   e.stopPropagation();
                   onEdit();
                 }}
-                className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-black items-center justify-center border-2 border-white"
+                style={{
+                  position: "absolute",
+                  top: -10,
+                  right: -10,
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  backgroundColor: "#000",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 2,
+                  elevation: 3,
+                }}
                 activeOpacity={0.7}
               >
-                <Pencil color="white" size={14} />
+                <Pencil color="white" size={12} />
               </TouchableOpacity>
             )}
-          </>
+          </View>
+        ) : (
+          <OverlayPreview
+            config={modifiedConfig}
+            currentTime={currentTime}
+            videoWidth={videoWidth}
+            videoHeight={videoHeight}
+          />
         )}
       </Animated.View>
     </GestureDetector>

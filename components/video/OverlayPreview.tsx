@@ -7,6 +7,7 @@ interface OverlayPreviewProps {
   currentTime: number; // Current video playback time in seconds
   videoWidth: number;
   videoHeight: number;
+  inline?: boolean; // If true, renders without absolute positioning
 }
 
 export function OverlayPreview({
@@ -14,6 +15,7 @@ export function OverlayPreview({
   currentTime,
   videoWidth,
   videoHeight,
+  inline = false,
 }: OverlayPreviewProps) {
   if (config.type === 'none') {
     return null;
@@ -50,15 +52,15 @@ export function OverlayPreview({
     return null;
   }
 
-  // Calculate position (percentage to pixels)
+  // Calculate position (percentage to pixels) - only needed if not inline
   const left = config.position.x * videoWidth;
   const top = config.position.y * videoHeight;
 
   return (
     <View
       style={[
-        styles.container,
-        {
+        inline ? styles.inlineContainer : styles.container,
+        !inline && {
           left,
           top,
         },
@@ -92,6 +94,9 @@ export function OverlayPreview({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
+    zIndex: 10,
+  },
+  inlineContainer: {
     zIndex: 10,
   },
   textContainer: {

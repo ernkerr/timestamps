@@ -24,10 +24,10 @@ export const AVAILABLE_FONTS: Font[] = [
  * Preset font sizes
  */
 export const FONT_SIZES = [
-  { value: 16, label: 'Small' },
-  { value: 24, label: 'Medium' },
-  { value: 32, label: 'Large' },
-  { value: 48, label: 'Extra Large' },
+  { value: 10, label: 'Small' },
+  { value: 12, label: 'Medium' },
+  { value: 14, label: 'Large' },
+  { value: 16, label: 'Extra Large' },
 ];
 
 /**
