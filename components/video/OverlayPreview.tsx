@@ -1,0 +1,107 @@
+import { View, StyleSheet, Text } from 'react-native';
+import { formatElapsedTime, formatTimeOfDayTimestamp } from '@/lib/utils/timeFormatters';
+import type { OverlayConfig } from '@/lib/types/overlay';
+
+interface OverlayPreviewProps {
+  config: OverlayConfig;
+  currentTime: number; // Current video playback time in seconds
+  videoWidth: number;
+  videoHeight: number;
+}
+
+export function OverlayPreview({
+  config,
+  currentTime,
+  videoWidth,
+  videoHeight,
+}: OverlayPreviewProps) {
+  if (config.type === 'none') {
+    return null;
+  }
+
+  // Calculate overlay text based on type
+  let overlayText = '';
+
+  switch (config.type) {
+    case 'elapsed':
+      if (config.elapsedTimer) {
+        const elapsedTime = Math.max(0, currentTime - config.elapsedTimer.startTime);
+        overlayText = formatElapsedTime(elapsedTime, true);
+      }
+      break;
+
+    case 'timestamp':
+      if (config.timestamp) {
+        overlayText = formatTimeOfDayTimestamp(
+          currentTime,
+          config.timestamp.realWorldStartTime,
+          config.timestamp.timelapseSpeed,
+          config.timestamp.format
+        );
+      }
+      break;
+
+    case 'text':
+      overlayText = config.text || '';
+      break;
+  }
+
+  if (!overlayText) {
+    return null;
+  }
+
+  // Calculate position (percentage to pixels)
+  const left = config.position.x * videoWidth;
+  const top = config.position.y * videoHeight;
+
+  return (
+    <View
+      style={[
+        styles.container,
+        {
+          left,
+          top,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.textContainer,
+          config.backgroundColor && {
+            backgroundColor: config.backgroundColor,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.text,
+            {
+              fontSize: config.fontSize,
+              color: config.color,
+              fontFamily: config.fontFamily === 'System' ? undefined : config.fontFamily,
+            },
+          ]}
+        >
+          {overlayText}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    zIndex: 10,
+  },
+  textContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  text: {
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    fontVariant: ['tabular-nums'],
+  },
+});
