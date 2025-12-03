@@ -2,6 +2,9 @@ import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { VideoPlayer } from '@/components/video/VideoPlayer';
+import { TimerEditor } from '@/components/video/TimerEditor';
+import { TimestampEditor } from '@/components/video/TimestampEditor';
+import { TextEditor } from '@/components/video/TextEditor';
 import { useVideoStore } from '@/lib/store/videoStore';
 import type { OverlayType } from '@/lib/types/overlay';
 
