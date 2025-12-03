@@ -27,7 +27,8 @@ export function OverlayPreview({
   switch (config.type) {
     case 'elapsed':
       if (config.elapsedTimer) {
-        const elapsedTime = Math.max(0, currentTime - config.elapsedTimer.startTime);
+        const timelapseSpeed = config.elapsedTimer.timelapseSpeed || 1;
+        const elapsedTime = Math.max(0, currentTime - config.elapsedTimer.startTime) * timelapseSpeed;
         overlayText = formatElapsedTime(elapsedTime, true, config.showSeconds ?? true);
       }
       break;

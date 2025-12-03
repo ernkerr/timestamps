@@ -16,6 +16,7 @@ export function TimerEditor({ overlayId }: TimerEditorProps) {
   }
 
   const startTime = overlayConfig.elapsedTimer.startTime;
+  const timelapseSpeed = overlayConfig.elapsedTimer.timelapseSpeed || 1;
   const videoDuration = sourceVideo?.duration || 0;
 
   const handleStartTimeChange = (seconds: number) => {
@@ -25,6 +26,16 @@ export function TimerEditor({ overlayId }: TimerEditorProps) {
     updateOverlay(overlayId, {
       elapsedTimer: {
         startTime: clampedSeconds,
+        timelapseSpeed: timelapseSpeed,
+      },
+    });
+  };
+
+  const handleTimelapseSpeedChange = (speed: number) => {
+    updateOverlay(overlayId, {
+      elapsedTimer: {
+        startTime: startTime,
+        timelapseSpeed: Math.max(1, speed),
       },
     });
   };
@@ -60,6 +71,37 @@ export function TimerEditor({ overlayId }: TimerEditorProps) {
         </ThemedText>
       </View>
 
+      {/* Timelapse Speed */}
+      <View style={styles.field}>
+        <ThemedText style={styles.label}>Timelapse Speed</ThemedText>
+        <ThemedText style={styles.description}>
+          How fast real-world time passes (e.g., 120x = 2 hours in 1 minute)
+        </ThemedText>
+
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            value={timelapseSpeed.toString()}
+            onChangeText={(text) => {
+              const parsed = parseFloat(text);
+              if (!isNaN(parsed)) {
+                handleTimelapseSpeedChange(parsed);
+              }
+            }}
+            keyboardType="numeric"
+            placeholder="1"
+            placeholderTextColor="#999"
+          />
+          <ThemedText style={styles.unit}>×</ThemedText>
+        </View>
+
+        <ThemedText style={styles.hint}>
+          {videoDuration > 0 && (
+            <>Real-world duration: {Math.round((videoDuration * timelapseSpeed) / 60)} minutes</>
+          )}
+        </ThemedText>
+      </View>
+
       {/* Preview */}
       <View style={styles.previewSection}>
         <View style={styles.previewHeader}>
@@ -78,7 +120,7 @@ export function TimerEditor({ overlayId }: TimerEditorProps) {
 
         <View style={styles.previewBox}>
           <ThemedText style={styles.previewTime}>
-            {formatElapsedTime(videoDuration - startTime)}
+            {formatElapsedTime((videoDuration - startTime) * timelapseSpeed)}
           </ThemedText>
           <ThemedText style={styles.previewLabel}>
             At end of video ({formatElapsedTime(videoDuration)})
