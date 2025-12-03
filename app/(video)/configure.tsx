@@ -1,11 +1,13 @@
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { VideoPlayer } from '@/components/video/VideoPlayer';
+import { OverlayPreview } from '@/components/video/OverlayPreview';
 import { TimerEditor } from '@/components/video/TimerEditor';
 import { TimestampEditor } from '@/components/video/TimestampEditor';
 import { TextEditor } from '@/components/video/TextEditor';
 import { StyleEditor } from '@/components/video/StyleEditor';
+import { PositionControl } from '@/components/video/PositionControl';
 import { useVideoStore } from '@/lib/store/videoStore';
 import type { OverlayType } from '@/lib/types/overlay';
 
@@ -45,12 +47,25 @@ export default function ConfigureScreen() {
 
         {/* Video Preview */}
         <View style={styles.videoSection}>
-          <VideoPlayer
-            videoSource={{ uri: sourceVideo.uri }}
-            style={styles.videoPlayer}
-            shouldLoop
-            shouldMute
-          />
+          <View style={styles.videoContainer}>
+            <VideoPlayer
+              videoSource={{ uri: sourceVideo.uri }}
+              style={styles.videoPlayer}
+              shouldLoop
+              shouldMute
+            />
+            {/* Overlay Preview on Video */}
+            {overlayConfig.type !== 'none' && (
+              <View style={styles.overlayContainer}>
+                <OverlayPreview
+                  config={overlayConfig}
+                  currentTime={5} // Show preview at 5 seconds
+                  videoWidth={Dimensions.get('window').width - 48}
+                  videoHeight={(Dimensions.get('window').width - 48) * (9 / 16)}
+                />
+              </View>
+            )}
+          </View>
           <View style={styles.videoInfo}>
             <ThemedText style={styles.videoInfoText}>
               {sourceVideo.fileName || 'Imported video'}
@@ -58,6 +73,11 @@ export default function ConfigureScreen() {
             <ThemedText style={styles.videoInfoText}>
               {Math.round(sourceVideo.duration)}s • {sourceVideo.dimensions.width}×{sourceVideo.dimensions.height}
             </ThemedText>
+            {overlayConfig.type !== 'none' && (
+              <ThemedText style={styles.videoInfoHint}>
+                Preview shows overlay at 5s
+              </ThemedText>
+            )}
           </View>
         </View>
 
@@ -113,6 +133,23 @@ export default function ConfigureScreen() {
             {overlayConfig.type === 'text' && <TextEditor />}
           </View>
         )}
+
+        {/* Style Customization */}
+        {overlayConfig.type !== 'none' && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionDot} />
+              <ThemedText style={styles.sectionTitle}>APPEARANCE</ThemedText>
+            </View>
+
+            <StyleEditor />
+
+            {/* Divider */}
+            <View style={styles.divider} />
+
+            <PositionControl />
+          </View>
+        )}
       </ScrollView>
 
       {/* Bottom Action */}
@@ -163,6 +200,10 @@ const styles = StyleSheet.create({
   videoSection: {
     marginBottom: 32,
   },
+  videoContainer: {
+    position: 'relative',
+    width: '100%',
+  },
   videoPlayer: {
     width: '100%',
     aspectRatio: 16 / 9,
@@ -170,6 +211,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000',
     borderRadius: 0,
+  },
+  overlayContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'none',
   },
   videoInfo: {
     marginTop: 12,
@@ -179,6 +228,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '300',
     color: '#666',
+    letterSpacing: 0.3,
+  },
+  videoInfoHint: {
+    fontSize: 11,
+    fontWeight: '300',
+    color: '#999',
+    fontStyle: 'italic',
     letterSpacing: 0.3,
   },
   section: {
@@ -234,6 +290,11 @@ const styles = StyleSheet.create({
   },
   typeDescriptionActive: {
     color: 'rgba(255, 255, 255, 0.7)',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 24,
   },
   errorContainer: {
     flex: 1,
