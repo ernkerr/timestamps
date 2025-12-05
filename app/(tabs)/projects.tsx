@@ -44,6 +44,30 @@ export default function ProjectsScreen() {
     router.push('/(video)/configure');
   };
 
+  // Handle delete
+  const handleDelete = (project: DraftProject) => {
+    setDeleteModal({ visible: true, project });
+  };
+
+  const confirmDelete = async () => {
+    if (deleteModal.project) {
+      await deleteDraftProject(deleteModal.project.id);
+      setDeleteModal({ visible: false, project: null });
+    }
+  };
+
+  // Handle rename
+  const handleRename = (project: DraftProject) => {
+    setRenameModal({ visible: true, project });
+  };
+
+  const confirmRename = async (newName: string) => {
+    if (renameModal.project) {
+      await renameDraftProject(renameModal.project.id, newName);
+      setRenameModal({ visible: false, project: null });
+    }
+  };
+
   // Empty state
   if (sortedDrafts.length === 0) {
     return (
@@ -75,14 +99,33 @@ export default function ProjectsScreen() {
         data={sortedDrafts}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View>
-            <ThemedText>Project: {item.name}</ThemedText>
-          </View>
+          <ProjectCard
+            project={item}
+            onPress={() => handleProjectPress(item)}
+            onDelete={() => handleDelete(item)}
+            onRename={() => handleRename(item)}
+          />
         )}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        visible={deleteModal.visible}
+        projectName={deleteModal.project?.name || ''}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteModal({ visible: false, project: null })}
+      />
+
+      {/* Rename Modal */}
+      <RenameModal
+        visible={renameModal.visible}
+        currentName={renameModal.project?.name || ''}
+        onSubmit={confirmRename}
+        onCancel={() => setRenameModal({ visible: false, project: null })}
       />
     </View>
   );

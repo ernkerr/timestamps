@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ThemedText } from "@/components/themed-text";
 import { PositionControl } from "@/components/video/PositionControl";
 import { StyleEditor } from "@/components/video/StyleEditor";
@@ -7,6 +7,7 @@ import { TimerEditor } from "@/components/video/TimerEditor";
 import { TimestampEditor } from "@/components/video/TimestampEditor";
 import { VideoWithOverlays } from "@/components/video/VideoWithOverlays";
 import { useVideoStore } from "@/lib/store/videoStore";
+import { debounce } from "@/lib/utils/debounce";
 import type { OverlayType } from "@/lib/types/overlay";
 import { useRouter } from "expo-router";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
@@ -28,7 +29,8 @@ export default function ConfigureScreen() {
     hasOverlayType,
     selectOverlay,
     updateOverlay,
-    removeOverlay
+    removeOverlay,
+    saveDraftProject
   } = useVideoStore();
 
   // Settings panel state management
@@ -38,6 +40,21 @@ export default function ConfigureScreen() {
   useEffect(() => {
     setSettingsPanelOpen(!!selectedOverlayId);
   }, [selectedOverlayId]);
+
+  // Debounced auto-save for drafts
+  const debouncedSave = useMemo(
+    () => debounce(() => {
+      saveDraftProject();
+    }, 2000),
+    [saveDraftProject]
+  );
+
+  // Trigger auto-save when overlays change
+  useEffect(() => {
+    if (sourceVideo && overlays.length > 0) {
+      debouncedSave();
+    }
+  }, [overlays, sourceVideo, debouncedSave]);
 
   // Get the currently selected overlay for editing
   const selectedOverlay = overlays.find(o => o.id === selectedOverlayId) || overlays[0];
