@@ -34,5 +34,17 @@ export interface SavedProject {
   duration: number;
 }
 
+export interface DraftProject {
+  id: string;
+  name: string;
+  sourceVideoUri: string;
+  overlays: any[]; // Will be OverlayConfig[] - imported from overlay.ts
+  thumbnailUri?: string;
+  lastEditedAt: Date;
+  createdAt: Date;
+  videoDuration: number;
+  videoDimensions: VideoDimensions;
+}
+
 export type ExportCodec = 'h264' | 'h265';
 export type ExportQuality = 'low' | 'medium' | 'high';
