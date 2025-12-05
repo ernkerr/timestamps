@@ -113,6 +113,9 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
     quality: 'high',
   },
   savedProjects: [],
+  draftProjects: [],
+  currentDraftId: null,
+  lastAutoSave: null,
 
   // Source video actions
   setSourceVideo: (video) => set({ sourceVideo: video }),
@@ -233,6 +236,104 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
 
   clearProjects: () => set({ savedProjects: [] }),
 
+  // Draft project management actions
+  loadDrafts: async () => {
+    const drafts = await draftStorage.loadDrafts();
+    set({ draftProjects: drafts });
+  },
+
+  saveDraftProject: async (name?: string) => {
+    const state = get();
+    const { sourceVideo, overlays, currentDraftId } = state;
+
+    if (!sourceVideo) {
+      console.warn('Cannot save draft: no source video');
+      return;
+    }
+
+    const now = new Date();
+    const draftId = currentDraftId || `draft-${Date.now()}`;
+
+    // Generate default name if not provided
+    const draftName = name || `Project - ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+
+    // Generate thumbnail only if this is a new draft (no currentDraftId)
+    let thumbnailUri: string | undefined;
+    if (!currentDraftId) {
+      try {
+        thumbnailUri = await generateThumbnail(sourceVideo.uri);
+      } catch (error) {
+        console.error('Failed to generate thumbnail:', error);
+      }
+    } else {
+      // Keep existing thumbnail
+      const existingDraft = state.draftProjects.find((d) => d.id === currentDraftId);
+      thumbnailUri = existingDraft?.thumbnailUri;
+    }
+
+    const draft: DraftProject = {
+      id: draftId,
+      name: draftName,
+      sourceVideoUri: sourceVideo.uri,
+      overlays: overlays,
+      thumbnailUri,
+      lastEditedAt: now,
+      createdAt: currentDraftId
+        ? state.draftProjects.find((d) => d.id === currentDraftId)?.createdAt || now
+        : now,
+      videoDuration: sourceVideo.duration,
+      videoDimensions: sourceVideo.dimensions,
+    };
+
+    await draftStorage.saveDraft(draft);
+
+    // Update local state
+    const updatedDrafts = currentDraftId
+      ? state.draftProjects.map((d) => (d.id === currentDraftId ? draft : d))
+      : [draft, ...state.draftProjects];
+
+    set({
+      draftProjects: updatedDrafts,
+      currentDraftId: draftId,
+      lastAutoSave: now,
+    });
+  },
+
+  deleteDraftProject: async (id: string) => {
+    await draftStorage.deleteDraft(id);
+    const state = get();
+    set({
+      draftProjects: state.draftProjects.filter((d) => d.id !== id),
+      currentDraftId: state.currentDraftId === id ? null : state.currentDraftId,
+    });
+  },
+
+  renameDraftProject: async (id: string, newName: string) => {
+    await draftStorage.updateDraftName(id, newName);
+    const state = get();
+    const updatedDrafts = state.draftProjects.map((d) =>
+      d.id === id ? { ...d, name: newName, lastEditedAt: new Date() } : d
+    );
+    set({ draftProjects: updatedDrafts });
+  },
+
+  loadDraftIntoEditor: (draft: DraftProject) => {
+    set({
+      sourceVideo: {
+        uri: draft.sourceVideoUri,
+        duration: draft.videoDuration,
+        dimensions: draft.videoDimensions,
+      },
+      overlays: draft.overlays,
+      currentDraftId: draft.id,
+      selectedOverlayId: draft.overlays[0]?.id || null,
+    });
+  },
+
+  setCurrentDraftId: (id: string | null) => set({ currentDraftId: id }),
+
+  clearCurrentDraft: () => set({ currentDraftId: null, lastAutoSave: null }),
+
   // Global reset
   reset: () =>
     set({
@@ -244,5 +345,7 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
         codec: 'h264',
         quality: 'high',
       },
+      currentDraftId: null,
+      lastAutoSave: null,
     }),
 }));

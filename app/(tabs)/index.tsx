@@ -154,6 +154,27 @@ export default function HomeScreen() {
               </View>
             </View>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/(tabs)/projects')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.actionContent}>
+              <View style={styles.actionNumber}>
+                <ThemedText style={styles.numberText}>03</ThemedText>
+              </View>
+              <View style={styles.actionDetails}>
+                <ThemedText style={styles.actionLabel}>Projects</ThemedText>
+                <ThemedText style={styles.actionDescription}>
+                  Resume drafts
+                </ThemedText>
+              </View>
+              <View style={styles.actionArrow}>
+                <ThemedText style={styles.arrowText}>→</ThemedText>
+              </View>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Process */}
