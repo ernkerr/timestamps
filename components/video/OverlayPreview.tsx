@@ -29,7 +29,10 @@ export function OverlayPreview({
       if (config.elapsedTimer) {
         const timelapseSpeed = config.elapsedTimer.timelapseSpeed || 1;
         const elapsedTime = currentTime * timelapseSpeed;
-        overlayText = formatElapsedTime(elapsedTime, true, config.showSeconds ?? true);
+        const showHours = config.showHours ?? true;
+        const showMinutes = config.showMinutes ?? true;
+        const showSeconds = config.showSeconds ?? true;
+        overlayText = formatElapsedTime(elapsedTime, showHours, showMinutes, showSeconds);
       }
       break;
 

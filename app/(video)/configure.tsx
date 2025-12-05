@@ -1,23 +1,21 @@
-import { useState, useEffect, useMemo } from "react";
 import { ThemedText } from "@/components/themed-text";
-import { PositionControl } from "@/components/video/PositionControl";
-import { StyleEditor } from "@/components/video/StyleEditor";
-import { TextEditor } from "@/components/video/TextEditor";
-import { TimerEditor } from "@/components/video/TimerEditor";
-import { TimestampEditor } from "@/components/video/TimestampEditor";
+import { OverlayTypeSelector } from "@/components/video/OverlayTypeSelector";
+import { TextSettings } from "@/components/video/settings/TextSettings";
+import { TimerSettings } from "@/components/video/settings/TimerSettings";
+import { TimestampSettings } from "@/components/video/settings/TimestampSettings";
 import { VideoWithOverlays } from "@/components/video/VideoWithOverlays";
 import { useVideoStore } from "@/lib/store/videoStore";
-import { debounce } from "@/lib/utils/debounce";
 import type { OverlayType } from "@/lib/types/overlay";
+import { debounce } from "@/lib/utils/debounce";
 import { useRouter } from "expo-router";
-import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
+import { useEffect, useMemo, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
-  Text,
 } from "react-native";
+import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 
 export default function ConfigureScreen() {
   const router = useRouter();
@@ -26,7 +24,6 @@ export default function ConfigureScreen() {
     overlays,
     selectedOverlayId,
     toggleOverlayType,
-    hasOverlayType,
     selectOverlay,
     updateOverlay,
     removeOverlay,
@@ -63,6 +60,21 @@ export default function ConfigureScreen() {
     selectOverlay(null);
   };
 
+  const handleTypeSelect = (type: OverlayType) => {
+    toggleOverlayType(type);
+    // Auto-select the newly created overlay
+    setTimeout(() => {
+      const newOverlay = overlays.find(o => o.type === type);
+      if (newOverlay) {
+        selectOverlay(newOverlay.id);
+      }
+    }, 100);
+  };
+
+  const handleNext = () => {
+    router.push("/(video)/preview");
+  };
+
   if (!sourceVideo) {
     return (
       <View style={styles.container}>
@@ -73,51 +85,18 @@ export default function ConfigureScreen() {
     );
   }
 
-  const overlayTypes: {
-    type: OverlayType;
-    label: string;
-    description: string;
-  }[] = [
-    {
-      type: "elapsed",
-      label: "Elapsed Timer",
-      description: "Count up from video start",
-    },
-    {
-      type: "timestamp",
-      label: "Time-of-Day",
-      description: "Real-world time with timelapse",
-    },
-    {
-      type: "text",
-      label: "Custom Text",
-      description: "Static or dynamic text",
-    },
-    {
-      type: "none",
-      label: "No Overlay",
-      description: "Export without overlay",
-    },
-  ];
-
-  const handleNext = () => {
-    router.push("/(video)/preview");
-  };
-
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerMark} />
-          <ThemedText style={styles.headerText}>CONFIGURE</ThemedText>
-        </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerMark} />
+        <ThemedText style={styles.headerText}>CONFIGURE</ThemedText>
+      </View>
 
-        {/* Video Preview */}
-        <View style={styles.videoSection}>
+      {/* Main Content Area */}
+      <View style={styles.mainContent}>
+        {/* Video Preview - Top Right */}
+        <View style={styles.previewSection}>
           <View style={styles.videoContainer}>
             <VideoWithOverlays
               videoSource={{ uri: sourceVideo.uri }}
@@ -132,146 +111,57 @@ export default function ConfigureScreen() {
           </View>
         </View>
 
-        {/* Overlay Type Selector - Only show when no overlays exist */}
-        {overlays.length === 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionDot} />
-              <ThemedText style={styles.sectionTitle}>OVERLAY TYPE</ThemedText>
-            </View>
-
-            <View style={styles.typeGrid}>
-              {overlayTypes.map((item) => {
-                const isSelected = item.type === 'none'
-                  ? overlays.length === 0
-                  : hasOverlayType(item.type);
-
-                return (
-                  <TouchableOpacity
-                    key={item.type}
-                    style={[
-                      styles.typeCard,
-                      isSelected && styles.typeCardActive,
-                    ]}
-                    onPress={() => toggleOverlayType(item.type)}
-                    activeOpacity={0.7}
-                  >
-                    <ThemedText
-                      style={[
-                        styles.typeLabel,
-                        isSelected && styles.typeLabelActive,
-                      ]}
-                    >
-                      {item.label}
-                    </ThemedText>
-                    <ThemedText
-                      style={[
-                        styles.typeDescription,
-                        isSelected && styles.typeDescriptionActive,
-                      ]}
-                    >
-                      {item.description}
-                    </ThemedText>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        )}
-
-        {/* Settings Panel */}
-        {settingsPanelOpen && selectedOverlay ? (
-          <Animated.View
-            entering={FadeInDown.duration(200)}
-            exiting={FadeOutUp.duration(150)}
-          >
-            {/* Panel Header with Close Button */}
-            <View style={styles.panelHeader}>
-              <View style={styles.panelHeaderLeft}>
-                <View style={styles.sectionDot} />
-                <ThemedText style={styles.panelHeaderTitle}>
-                  EDITING: {selectedOverlay.type.toUpperCase()}
-                </ThemedText>
-              </View>
-              <TouchableOpacity
-                onPress={handleCloseSettings}
-                style={styles.closeButton}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.closeButtonText}>×</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Overlay Selector (if multiple overlays) */}
-            {overlays.length > 1 && (
-              <View style={styles.section}>
-                <ScrollView
-                  horizontal
-                  style={styles.overlaySelector}
-                  showsHorizontalScrollIndicator={false}
+        {/* Settings Panel - Scrollable */}
+        <ScrollView
+          style={styles.settingsScroll}
+          contentContainerStyle={styles.settingsContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {settingsPanelOpen && selectedOverlay ? (
+            <Animated.View
+              entering={FadeInDown.duration(200)}
+              exiting={FadeOutUp.duration(150)}
+            >
+              {/* Panel Header with Close Button */}
+              <View style={styles.panelHeader}>
+                <View style={styles.panelHeaderLeft}>
+                  <View style={styles.sectionDot} />
+                  <ThemedText style={styles.panelHeaderTitle}>
+                    EDITING: {selectedOverlay.type.toUpperCase()}
+                  </ThemedText>
+                </View>
+                <TouchableOpacity
+                  onPress={handleCloseSettings}
+                  style={styles.closeButton}
+                  activeOpacity={0.7}
                 >
-                  {overlays.map((overlay) => (
-                    <TouchableOpacity
-                      key={overlay.id}
-                      style={[
-                        styles.overlayTab,
-                        overlay.id === selectedOverlayId && styles.overlayTabActive,
-                      ]}
-                      onPress={() => selectOverlay(overlay.id)}
-                      activeOpacity={0.7}
-                    >
-                      <ThemedText
-                        style={[
-                          styles.overlayTabText,
-                          overlay.id === selectedOverlayId && styles.overlayTabTextActive,
-                        ]}
-                      >
-                        {overlay.type.charAt(0).toUpperCase() + overlay.type.slice(1)}
-                      </ThemedText>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {/* Settings for Selected Overlay */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionDot} />
-                <ThemedText style={styles.sectionTitle}>SETTINGS</ThemedText>
+                  <ThemedText style={styles.closeButtonText}>×</ThemedText>
+                </TouchableOpacity>
               </View>
 
-              {selectedOverlay.type === "elapsed" && <TimerEditor overlayId={selectedOverlay.id} />}
-              {selectedOverlay.type === "timestamp" && <TimestampEditor overlayId={selectedOverlay.id} />}
-              {selectedOverlay.type === "text" && <TextEditor overlayId={selectedOverlay.id} />}
-            </View>
-
-            {/* Style Customization */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionDot} />
-                <ThemedText style={styles.sectionTitle}>APPEARANCE</ThemedText>
+              {/* Settings for Selected Overlay */}
+              <View style={styles.settingsContainer}>
+                {selectedOverlay.type === "elapsed" && <TimerSettings overlayId={selectedOverlay.id} />}
+                {selectedOverlay.type === "timestamp" && <TimestampSettings overlayId={selectedOverlay.id} />}
+                {selectedOverlay.type === "text" && <TextSettings overlayId={selectedOverlay.id} />}
               </View>
-
-              <StyleEditor overlayId={selectedOverlay.id} />
-
-              {/* Divider */}
-              <View style={styles.divider} />
-
-              <PositionControl overlayId={selectedOverlay.id} />
-            </View>
-          </Animated.View>
-        ) : (
-          /* Empty State */
-          overlays.length === 0 && (
+            </Animated.View>
+          ) : (
+            /* Empty State */
             <View style={styles.emptyState}>
               <ThemedText style={styles.emptyStateText}>
-                Select an overlay type above to get started
+                Select an overlay type below to get started
               </ThemedText>
             </View>
-          )
-        )}
-      </ScrollView>
+          )}
+        </ScrollView>
+      </View>
+
+      {/* Bottom Overlay Type Selector */}
+      <OverlayTypeSelector
+        selectedType={selectedOverlay?.type || null}
+        onSelectType={handleTypeSelect}
+      />
 
       {/* Bottom Action */}
       <View style={styles.bottomBar}>
@@ -295,18 +185,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 100,
-  },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
   },
   headerMark: {
     width: 4,
@@ -320,127 +206,27 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: "#000",
   },
-  videoSection: {
-    marginBottom: 32,
-    marginHorizontal: -24,
+  mainContent: {
+    flex: 1,
+  },
+  previewSection: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 16,
   },
   videoContainer: {
-    position: "relative",
     width: "100%",
-  },
-  videoPlayer: {
-    width: "100%",
-    aspectRatio: 16 / 10,
-    borderRadius: 0,
-  },
-  overlayContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    pointerEvents: "none",
-  },
-  videoInfo: {
-    marginTop: 12,
-    gap: 4,
-  },
-  videoInfoText: {
-    fontSize: 12,
-    fontWeight: "300",
-    color: "#666",
-    letterSpacing: 0.3,
-  },
-  videoInfoHint: {
-    fontSize: 11,
-    fontWeight: "300",
-    color: "#999",
-    fontStyle: "italic",
-    letterSpacing: 0.3,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  sectionDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    aspectRatio: 16 / 9,
     backgroundColor: "#000",
-    marginRight: 10,
+    borderRadius: 4,
+    overflow: "hidden",
   },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: "400",
-    letterSpacing: 1.5,
-    color: "#000",
+  settingsScroll: {
+    flex: 1,
   },
-  typeGrid: {
-    gap: 12,
-  },
-  typeCard: {
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 0,
-    padding: 16,
-    backgroundColor: "#fff",
-  },
-  typeCardActive: {
-    borderColor: "#000",
-    backgroundColor: "#000",
-  },
-  typeLabel: {
-    fontSize: 16,
-    fontWeight: "400",
-    letterSpacing: 0.5,
-    color: "#000",
-    marginBottom: 4,
-  },
-  typeLabelActive: {
-    color: "#fff",
-  },
-  typeDescription: {
-    fontSize: 12,
-    fontWeight: "300",
-    color: "#666",
-    letterSpacing: 0.3,
-  },
-  typeDescriptionActive: {
-    color: "rgba(255, 255, 255, 0.7)",
-  },
-  overlaySelector: {
-    flexDirection: "row",
-  },
-  overlayTab: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 20,
-    backgroundColor: "#fff",
-  },
-  overlayTabActive: {
-    borderColor: "#000",
-    backgroundColor: "#000",
-  },
-  overlayTabText: {
-    fontSize: 14,
-    fontWeight: "400",
-    color: "#666",
-    letterSpacing: 0.3,
-  },
-  overlayTabTextActive: {
-    color: "#fff",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#E0E0E0",
-    marginVertical: 24,
+  settingsContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
   panelHeader: {
     flexDirection: "row",
@@ -454,6 +240,13 @@ const styles = StyleSheet.create({
   panelHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  sectionDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#000",
+    marginRight: 10,
   },
   panelHeaderTitle: {
     fontSize: 11,
@@ -474,6 +267,9 @@ const styles = StyleSheet.create({
     fontWeight: "300",
     color: "#666",
     lineHeight: 28,
+  },
+  settingsContainer: {
+    gap: 20,
   },
   emptyState: {
     flex: 1,
@@ -499,10 +295,6 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#000",
