@@ -3,12 +3,23 @@ import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { useVideoStore } from '@/lib/store/videoStore';
+import { ProjectCard } from '@/components/project/ProjectCard';
+import { DeleteConfirmationModal } from '@/components/project/DeleteConfirmationModal';
+import { RenameModal } from '@/components/project/RenameModal';
 import type { DraftProject } from '@/lib/types/video';
 
 export default function ProjectsScreen() {
   const router = useRouter();
-  const { draftProjects, loadDrafts, loadDraftIntoEditor } = useVideoStore();
+  const { draftProjects, loadDrafts, loadDraftIntoEditor, deleteDraftProject, renameDraftProject } = useVideoStore();
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{ visible: boolean; project: DraftProject | null }>({
+    visible: false,
+    project: null,
+  });
+  const [renameModal, setRenameModal] = useState<{ visible: boolean; project: DraftProject | null }>({
+    visible: false,
+    project: null,
+  });
 
   // Load drafts on mount
   useEffect(() => {
