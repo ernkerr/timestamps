@@ -9,6 +9,9 @@ export interface SourceVideo {
   dimensions: VideoDimensions;
   fileName?: string; // Optional filename
   fileSize?: number; // Optional file size in bytes
+  realTimeDuration?: number; // Real-world duration in seconds
+  creationDate?: Date; // Creation date of the video
+  isTimelapse?: boolean; // Whether the video is a timelapse
 }
 
 export interface ExportSettings {

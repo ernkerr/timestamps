@@ -97,77 +97,103 @@ class VideoExport: NSObject {
 
   @objc
   func getVideoMetadata(_ sourceUri: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
-    let url = URL(string: sourceUri.replacingOccurrences(of: "file://", with: "")) ?? URL(fileURLWithPath: sourceUri)
-    let asset = AVAsset(url: url)
-
-    guard let track = asset.tracks(withMediaType: .video).first else {
-      reject("NO_VIDEO", "No video track found", nil)
+    let cleanPath = sourceUri.replacingOccurrences(of: "file://", with: "")
+    let url = URL(fileURLWithPath: cleanPath)
+    
+    // Check if file exists
+    let fileManager = FileManager.default
+    if !fileManager.fileExists(atPath: cleanPath) {
+      let errorMsg = "File does not exist at path: \(cleanPath)"
+      print("❌ \(errorMsg)")
+      reject("FILE_NOT_FOUND", errorMsg, nil)
       return
     }
-
-    var realTimeDuration: Double = 0
-    let playbackDuration = CMTimeGetSeconds(asset.duration)
-
-    print("📹 Video Metadata Debug:")
-    print("  Playback duration: \(playbackDuration) seconds")
-    print("  Number of segments: \(track.segments.count)")
-
-    // Calculate real duration from segments to handle timelapses
-    for (index, segment) in track.segments.enumerated() {
-      if segment.isEmpty { 
-        print("  Segment \(index): EMPTY")
-        continue 
-      }
-      
-      let sourceDuration = CMTimeGetSeconds(segment.timeMapping.source.duration)
-      let targetDuration = CMTimeGetSeconds(segment.timeMapping.target.duration)
-      
-      print("  Segment \(index):")
-      print("    Source duration (real time): \(sourceDuration) seconds")
-      print("    Target duration (playback): \(targetDuration) seconds")
-      
-      realTimeDuration += sourceDuration
-    }
-
-    print("  Total real-time duration: \(realTimeDuration) seconds")
-
-    // Fallback if calculation fails or is zero
-    if realTimeDuration == 0 {
-      print("  ⚠️ Real-time duration is 0, falling back to playback duration")
-      realTimeDuration = playbackDuration
-    }
-
-    let calculatedSpeed = realTimeDuration / playbackDuration
-    print("  Calculated timelapse speed: \(calculatedSpeed)x")
-
-    // Extract creation date
-    var creationDateString: String?
     
-    // Try common metadata first
-    if let creationDateItem = AVMetadataItem.metadataItems(from: asset.commonMetadata, withKey: AVMetadataKey.commonKeyCreationDate, keySpace: .common).first {
-      if let dateValue = creationDateItem.value as? Date {
-        let formatter = ISO8601DateFormatter()
-        creationDateString = formatter.string(from: dateValue)
-      } else if let dateString = creationDateItem.value as? String {
-         creationDateString = dateString
-      }
-    }
+    print("✅ File exists, creating AVAsset...")
+    let asset = AVAsset(url: url)
     
-    // Try QuickTime metadata if common failed
-    if creationDateString == nil {
-        let qtMetadata = AVMetadataItem.metadataItems(from: asset.metadata, withKey: "com.apple.quicktime.creationdate", keySpace: .quickTimeUserData)
-        if let item = qtMetadata.first, let dateValue = item.value as? Date {
-            let formatter = ISO8601DateFormatter()
-            creationDateString = formatter.string(from: dateValue)
+    Task {
+      do {
+        print("⏳ Loading tracks...")
+        let tracks = try await asset.loadTracks(withMediaType: .video)
+        print("📹 Loaded \(tracks.count) tracks")
+        
+        guard let track = tracks.first else {
+          let errorMsg = "No video track found. File: \(cleanPath), Tracks loaded: \(tracks.count), File exists: \(fileManager.fileExists(atPath: cleanPath))"
+          print("❌ \(errorMsg)")
+          reject("NO_VIDEO", errorMsg, nil)
+          return
         }
+        
+        print("✅ Found video track!")
+        
+            var realTimeDuration: Double = 0
+            let playbackDuration = CMTimeGetSeconds(asset.duration)
+        
+            print("📹 Video Metadata Debug:")
+            print("  Playback duration: \(playbackDuration) seconds")
+            print("  Number of segments: \(track.segments.count)")
+        
+            // Calculate real duration from segments to handle timelapses
+            for (index, segment) in track.segments.enumerated() {
+              if segment.isEmpty { 
+                print("  Segment \(index): EMPTY")
+                continue 
+              }
+              
+              let sourceDuration = CMTimeGetSeconds(segment.timeMapping.source.duration)
+              let targetDuration = CMTimeGetSeconds(segment.timeMapping.target.duration)
+              
+              print("  Segment \(index):")
+              print("    Source duration (real time): \(sourceDuration) seconds")
+              print("    Target duration (playback): \(targetDuration) seconds")
+              
+              realTimeDuration += sourceDuration
+            }
+        
+            print("  Total real-time duration: \(realTimeDuration) seconds")
+        
+            // Fallback if calculation fails or is zero
+            if realTimeDuration == 0 {
+              print("  ⚠️ Real-time duration is 0, falling back to playback duration")
+              realTimeDuration = playbackDuration
+            }
+        
+            let calculatedSpeed = realTimeDuration / playbackDuration
+            print("  Calculated timelapse speed: \(calculatedSpeed)x")
+        
+            // Extract creation date
+            var creationDateString: String?
+            
+            // Try common metadata first
+            if let creationDateItem = AVMetadataItem.metadataItems(from: asset.commonMetadata, withKey: AVMetadataKey.commonKeyCreationDate, keySpace: .common).first {
+              if let dateValue = creationDateItem.value as? Date {
+                let formatter = ISO8601DateFormatter()
+                creationDateString = formatter.string(from: dateValue)
+              } else if let dateString = creationDateItem.value as? String {
+                 creationDateString = dateString
+              }
+            }
+            
+            // Try QuickTime metadata if common failed
+            if creationDateString == nil {
+                let qtMetadata = AVMetadataItem.metadataItems(from: asset.metadata, withKey: "com.apple.quicktime.creationdate", keySpace: .quickTimeUserData)
+                if let item = qtMetadata.first, let dateValue = item.value as? Date {
+                    let formatter = ISO8601DateFormatter()
+                    creationDateString = formatter.string(from: dateValue)
+                }
+            }
+        
+            resolve([
+              "creationDate": creationDateString as Any,
+              "duration": playbackDuration,
+              "realTimeDuration": realTimeDuration,
+              "isTimelapse": realTimeDuration > (playbackDuration * 1.05)
+            ])
+      } catch {
+        reject("LOAD_ERROR", "Failed to load video: \(error.localizedDescription)", error)
+      }
     }
-
-    resolve([
-      "creationDate": creationDateString as Any,
-      "duration": playbackDuration,
-      "realTimeDuration": realTimeDuration,
-      "isTimelapse": realTimeDuration > (playbackDuration * 1.05)
-    ])
   }
 
   private func createTextLayer(from data: [String: Any], videoSize: CGSize, duration: CMTime) -> CATextLayer? {

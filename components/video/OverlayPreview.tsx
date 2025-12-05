@@ -1,6 +1,6 @@
-import { View, StyleSheet, Text } from 'react-native';
-import { formatElapsedTime, formatTimeOfDayTimestamp } from '@/lib/utils/timeFormatters';
 import type { OverlayConfig } from '@/lib/types/overlay';
+import { formatElapsedTime, formatTimeOfDayTimestamp } from '@/lib/utils/timeFormatters';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface OverlayPreviewProps {
   config: OverlayConfig;
@@ -28,7 +28,7 @@ export function OverlayPreview({
     case 'elapsed':
       if (config.elapsedTimer) {
         const timelapseSpeed = config.elapsedTimer.timelapseSpeed || 1;
-        const elapsedTime = Math.max(0, currentTime - config.elapsedTimer.startTime) * timelapseSpeed;
+        const elapsedTime = currentTime * timelapseSpeed;
         overlayText = formatElapsedTime(elapsedTime, true, config.showSeconds ?? true);
       }
       break;

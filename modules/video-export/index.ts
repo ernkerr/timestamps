@@ -1,6 +1,6 @@
-import { NativeModulesProxy } from 'expo-modules-core';
+import { NativeModules } from 'react-native';
 
-const VideoExportModule = NativeModulesProxy.VideoExport;
+const VideoExportModule = NativeModules.VideoExport;
 
 export interface OverlayData {
   type: 'elapsed' | 'timestamp' | 'text';

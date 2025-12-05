@@ -1,10 +1,11 @@
 import { create } from 'zustand';
-import type { SourceVideo, ExportState, ExportSettings, SavedProject, DraftProject } from '../types/video';
-import type { OverlayConfig, OverlayType } from '../types/overlay';
+import { getVideoMetadata } from '../../modules/video-export';
 import * as draftStorage from '../services/draftStorage';
 import { generateThumbnail } from '../services/thumbnailGenerator';
+import type { OverlayConfig, OverlayType } from '../types/overlay';
+import type { DraftProject, ExportSettings, ExportState, SavedProject, SourceVideo } from '../types/video';
 
-const createDefaultOverlay = (type: OverlayType, index: number = 0): OverlayConfig => {
+const createDefaultOverlay = (type: OverlayType, index: number = 0, sourceVideo?: SourceVideo | null): OverlayConfig => {
   const baseConfig = {
     id: `${type}-${Date.now()}-${index}`,
     type,
@@ -15,21 +16,30 @@ const createDefaultOverlay = (type: OverlayType, index: number = 0): OverlayConf
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   };
 
+  // Calculate timelapse speed if available
+  let timelapseSpeed = 1;
+  if (sourceVideo?.realTimeDuration && sourceVideo.duration > 0) {
+    timelapseSpeed = sourceVideo.realTimeDuration / sourceVideo.duration;
+  }
+
+  // Use creation date if available
+  const realWorldStartTime = sourceVideo?.creationDate || new Date();
+
   switch (type) {
     case 'elapsed':
       return {
         ...baseConfig,
         elapsedTimer: {
           startTime: 0,
-          timelapseSpeed: 120,
+          timelapseSpeed,
         },
       };
     case 'timestamp':
       return {
         ...baseConfig,
         timestamp: {
-          realWorldStartTime: new Date(),
-          timelapseSpeed: 120,
+          realWorldStartTime,
+          timelapseSpeed,
           format: '12h',
         },
       };
@@ -57,7 +67,7 @@ const INITIAL_EXPORT_STATE: ExportState = {
 interface VideoStore {
   // Source video state
   sourceVideo: SourceVideo | null;
-  setSourceVideo: (video: SourceVideo | null) => void;
+  setSourceVideo: (video: SourceVideo | null) => Promise<void>;
 
   // Overlay configuration
   overlays: OverlayConfig[];
@@ -118,12 +128,39 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
   lastAutoSave: null,
 
   // Source video actions
-  setSourceVideo: (video) => set({ sourceVideo: video }),
+  setSourceVideo: async (video) => {
+    if (!video) {
+      set({ sourceVideo: null });
+      return;
+    }
+
+    try {
+      // Fetch metadata using native module
+      console.log('Calling getVideoMetadata with URI:', video.uri);
+      const metadata = await getVideoMetadata(video.uri);
+      console.log('Video Metadata:', metadata);
+      
+      const enrichedVideo: SourceVideo = {
+        ...video,
+        realTimeDuration: metadata.realTimeDuration,
+        creationDate: metadata.creationDate ? new Date(metadata.creationDate) : undefined,
+        isTimelapse: metadata.isTimelapse,
+      };
+
+      console.log('Enriched Video:', enrichedVideo);
+
+      set({ sourceVideo: enrichedVideo });
+    } catch (error) {
+      console.warn('Failed to fetch video metadata:', error);
+      // Fallback to basic video info
+      set({ sourceVideo: video });
+    }
+  },
 
   // Overlay configuration actions
   addOverlay: (type) =>
     set((state) => {
-      const newOverlay = createDefaultOverlay(type, state.overlays.length);
+      const newOverlay = createDefaultOverlay(type, state.overlays.length, state.sourceVideo);
       return {
         overlays: [...state.overlays, newOverlay],
         selectedOverlayId: newOverlay.id,

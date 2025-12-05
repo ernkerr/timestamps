@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Platform } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { ThemedText } from '@/components/themed-text';
 import { useVideoStore } from '@/lib/store/videoStore';
-import { formatTimeOfDayTimestamp } from '@/lib/utils/timeFormatters';
 import type { TimestampFormat } from '@/lib/types/overlay';
+import { formatTimeOfDayTimestamp } from '@/lib/utils/timeFormatters';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useState } from 'react';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 interface TimestampEditorProps {
   overlayId: string;
@@ -123,24 +123,13 @@ export function TimestampEditor({ overlayId }: TimestampEditorProps) {
       <View style={styles.field}>
         <ThemedText style={styles.label}>Timelapse Speed</ThemedText>
         <ThemedText style={styles.description}>
-          How fast real-world time passes (e.g., 120x = 2 hours in 1 minute)
+          Automatically calculated from video metadata
         </ThemedText>
 
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            value={timelapseSpeed.toString()}
-            onChangeText={(text) => {
-              const parsed = parseFloat(text);
-              if (!isNaN(parsed)) {
-                handleTimelapseSpeedChange(parsed);
-              }
-            }}
-            keyboardType="numeric"
-            placeholder="1"
-            placeholderTextColor="#999"
-          />
-          <ThemedText style={styles.unit}>×</ThemedText>
+        <View style={styles.readOnlyRow}>
+          <ThemedText style={styles.readOnlyValue}>
+            {timelapseSpeed.toFixed(1)}×
+          </ThemedText>
         </View>
 
         <ThemedText style={styles.hint}>
@@ -248,6 +237,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginTop: 4,
+  },
+  readOnlyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  readOnlyValue: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#666',
   },
   input: {
     flex: 1,
