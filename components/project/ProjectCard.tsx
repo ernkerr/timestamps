@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import type { DraftProject } from '@/lib/types/video';
