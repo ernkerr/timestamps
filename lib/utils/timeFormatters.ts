@@ -77,11 +77,17 @@ export type TimestampFormat =
  * Formats a Date object according to the specified format
  * @param date - Date to format
  * @param format - Desired format
+ * @param showHours - Whether to show hours (default: true)
+ * @param showMinutes - Whether to show minutes (default: true)
+ * @param showSeconds - Whether to show seconds (default: true)
  * @returns Formatted time string
  */
 export function formatTimestamp(
   date: Date,
-  format: TimestampFormat = '12h'
+  format: TimestampFormat = '12h',
+  showHours: boolean = true,
+  showMinutes: boolean = true,
+  showSeconds: boolean = true
 ): string {
   const hours24 = date.getHours();
   const hours12 = hours24 % 12 || 12;
@@ -95,28 +101,39 @@ export function formatTimestamp(
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
 
-  switch (format) {
-    case '12h':
-      return `${hours12}:${pad(minutes)} ${ampm}`;
+  const is12h = format.includes('12h');
+  const is24h = format.includes('24h');
+  const includeDate = format.includes('date-time');
 
-    case '24h':
-      return `${pad(hours24)}:${pad(minutes)}`;
-
-    case '12h-full':
-      return `${hours12}:${pad(minutes)}:${pad(seconds)} ${ampm}`;
-
-    case '24h-full':
-      return `${pad(hours24)}:${pad(minutes)}:${pad(seconds)}`;
-
-    case 'date-time-12h':
-      return `${monthNames[date.getMonth()]} ${date.getDate()}, ${hours12}:${pad(minutes)} ${ampm}`;
-
-    case 'date-time-24h':
-      return `${monthNames[date.getMonth()]} ${date.getDate()}, ${pad(hours24)}:${pad(minutes)}`;
-
-    default:
-      return `${hours12}:${pad(minutes)} ${ampm}`;
+  // Build time parts based on toggles
+  const parts: string[] = [];
+  
+  if (showHours) {
+    parts.push(is24h ? pad(hours24) : hours12.toString());
   }
+  
+  if (showMinutes) {
+    parts.push(pad(minutes));
+  }
+  
+  if (showSeconds) {
+    parts.push(pad(seconds));
+  }
+
+  let timeString = parts.join(':');
+  
+  // Add AM/PM for 12h format
+  if (is12h && timeString) {
+    timeString += ` ${ampm}`;
+  }
+
+  // Add date prefix if needed
+  if (includeDate) {
+    const dateStr = `${monthNames[date.getMonth()]} ${date.getDate()}`;
+    return timeString ? `${dateStr}, ${timeString}` : dateStr;
+  }
+
+  return timeString || '0';
 }
 
 /**
@@ -125,13 +142,19 @@ export function formatTimestamp(
  * @param realWorldStartTime - Actual time when timelapse started
  * @param timelapseSpeed - Speed multiplier (e.g., 120 = 120x speed)
  * @param format - Desired format
+ * @param showHours - Whether to show hours (default: true)
+ * @param showMinutes - Whether to show minutes (default: true)
+ * @param showSeconds - Whether to show seconds (default: true)
  * @returns Formatted timestamp string
  */
 export function formatTimeOfDayTimestamp(
   videoTimestamp: number,
   realWorldStartTime: Date,
   timelapseSpeed: number,
-  format: TimestampFormat = '12h'
+  format: TimestampFormat = '12h',
+  showHours: boolean = true,
+  showMinutes: boolean = true,
+  showSeconds: boolean = true
 ): string {
   const realWorldTime = calculateRealWorldTime(
     videoTimestamp,
@@ -139,7 +162,7 @@ export function formatTimeOfDayTimestamp(
     timelapseSpeed
   );
 
-  return formatTimestamp(realWorldTime, format);
+  return formatTimestamp(realWorldTime, format, showHours, showMinutes, showSeconds);
 }
 
 /**

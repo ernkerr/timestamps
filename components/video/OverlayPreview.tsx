@@ -38,11 +38,17 @@ export function OverlayPreview({
 
     case 'timestamp':
       if (config.timestamp) {
+        const showHours = config.showHours ?? true;
+        const showMinutes = config.showMinutes ?? true;
+        const showSeconds = config.showSeconds ?? true;
         overlayText = formatTimeOfDayTimestamp(
           currentTime,
           config.timestamp.realWorldStartTime,
           config.timestamp.timelapseSpeed,
-          config.timestamp.format
+          config.timestamp.format,
+          showHours,
+          showMinutes,
+          showSeconds
         );
       }
       break;
