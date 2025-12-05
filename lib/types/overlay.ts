@@ -36,7 +36,10 @@ export interface BaseOverlayConfig {
   fontFamily: string;
   color: string; // Hex color (e.g., "#FFFFFF")
   backgroundColor?: string; // Optional background color with alpha (e.g., "rgba(0,0,0,0.5)")
-  showSeconds?: boolean; // Whether to show seconds in time display (default: true)
+  // Time display options (for elapsed and timestamp types)
+  showHours?: boolean; // Whether to show hours (default: true)
+  showMinutes?: boolean; // Whether to show minutes (default: true)
+  showSeconds?: boolean; // Whether to show seconds (default: true)
   text?: string; // For text overlay type
 }
 

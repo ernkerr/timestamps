@@ -5,13 +5,15 @@
 /**
  * Formats elapsed time in seconds to HH:MM:SS or MM:SS format
  * @param seconds - Total elapsed seconds
- * @param forceHours - Always show hours even if 0
+ * @param showHours - Whether to show hours (default: true)
+ * @param showMinutes - Whether to show minutes (default: true)
  * @param showSeconds - Whether to show seconds (default: true)
  * @returns Formatted time string (e.g., "3:00:00" or "5:30")
  */
 export function formatElapsedTime(
   seconds: number,
-  forceHours: boolean = false,
+  showHours: boolean = true,
+  showMinutes: boolean = true,
   showSeconds: boolean = true
 ): string {
   const totalSeconds = Math.floor(Math.abs(seconds));
@@ -21,17 +23,21 @@ export function formatElapsedTime(
 
   const pad = (n: number) => n.toString().padStart(2, '0');
 
-  if (hours > 0 || forceHours) {
-    if (showSeconds) {
-      return `${hours}:${pad(minutes)}:${pad(secs)}`;
-    }
-    return `${hours}:${pad(minutes)}`;
+  const parts: string[] = [];
+  
+  if (showHours) {
+    parts.push(hours.toString());
+  }
+  
+  if (showMinutes) {
+    parts.push(showHours ? pad(minutes) : minutes.toString());
+  }
+  
+  if (showSeconds) {
+    parts.push((showHours || showMinutes) ? pad(secs) : secs.toString());
   }
 
-  if (showSeconds) {
-    return `${minutes}:${pad(secs)}`;
-  }
-  return `${minutes}`;
+  return parts.length > 0 ? parts.join(':') : '0';
 }
 
 /**
