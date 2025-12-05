@@ -1,6 +1,8 @@
 import { create } from 'zustand';
-import type { SourceVideo, ExportState, ExportSettings, SavedProject } from '../types/video';
+import type { SourceVideo, ExportState, ExportSettings, SavedProject, DraftProject } from '../types/video';
 import type { OverlayConfig, OverlayType } from '../types/overlay';
+import * as draftStorage from '../services/draftStorage';
+import { generateThumbnail } from '../services/thumbnailGenerator';
 
 const createDefaultOverlay = (type: OverlayType, index: number = 0): OverlayConfig => {
   const baseConfig = {
@@ -83,6 +85,18 @@ interface VideoStore {
   saveProject: (project: SavedProject) => void;
   deleteProject: (id: string) => void;
   clearProjects: () => void;
+
+  // Draft project management
+  draftProjects: DraftProject[];
+  currentDraftId: string | null;
+  lastAutoSave: Date | null;
+  loadDrafts: () => Promise<void>;
+  saveDraftProject: (name?: string) => Promise<void>;
+  deleteDraftProject: (id: string) => Promise<void>;
+  renameDraftProject: (id: string, newName: string) => Promise<void>;
+  loadDraftIntoEditor: (draft: DraftProject) => void;
+  setCurrentDraftId: (id: string | null) => void;
+  clearCurrentDraft: () => void;
 
   // Global reset
   reset: () => void;
