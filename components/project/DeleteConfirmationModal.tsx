@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
+import React from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import Modal from 'react-native-modal';
 
 interface DeleteConfirmationModalProps {
   visible: boolean;
@@ -17,12 +18,16 @@ export function DeleteConfirmationModal({
 }: DeleteConfirmationModalProps) {
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
+      isVisible={visible}
+      onBackdropPress={onCancel}
+      onBackButtonPress={onCancel}
+      animationIn="fadeIn"
+      animationOut="fadeOut"
+      backdropOpacity={0.5}
+      useNativeDriver
+      hideModalContentWhileAnimating
     >
-      <View style={styles.overlay}>
+      <View style={styles.centeredView}>
         <View style={styles.modal}>
           {/* Header */}
           <View style={styles.header}>
@@ -65,12 +70,10 @@ export function DeleteConfirmationModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  centeredView: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
   },
   modal: {
     backgroundColor: '#fff',
@@ -153,3 +156,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
+

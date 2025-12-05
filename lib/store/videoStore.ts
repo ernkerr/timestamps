@@ -318,15 +318,29 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
   },
 
   loadDraftIntoEditor: (draft: DraftProject) => {
+    // Parse date strings back to Date objects in overlays
+    const parsedOverlays = draft.overlays.map((overlay) => {
+      if (overlay.timestamp?.realWorldStartTime) {
+        return {
+          ...overlay,
+          timestamp: {
+            ...overlay.timestamp,
+            realWorldStartTime: new Date(overlay.timestamp.realWorldStartTime),
+          },
+        };
+      }
+      return overlay;
+    });
+
     set({
       sourceVideo: {
         uri: draft.sourceVideoUri,
         duration: draft.videoDuration,
         dimensions: draft.videoDimensions,
       },
-      overlays: draft.overlays,
+      overlays: parsedOverlays,
       currentDraftId: draft.id,
-      selectedOverlayId: draft.overlays[0]?.id || null,
+      selectedOverlayId: parsedOverlays[0]?.id || null,
     });
   },
 

@@ -93,6 +93,60 @@ public class VideoExportModule: Module {
         }
       }
     }
+
+    AsyncFunction("getVideoMetadata") { (sourceUri: String, promise: Promise) in
+      let url = URL(string: sourceUri.replacingOccurrences(of: "file://", with: "")) ?? URL(fileURLWithPath: sourceUri)
+      let asset = AVAsset(url: url)
+
+      guard let track = asset.tracks(withMediaType: .video).first else {
+        promise.reject("NO_VIDEO", "No video track found")
+        return
+      }
+
+      var realTimeDuration: Double = 0
+      let playbackDuration = CMTimeGetSeconds(asset.duration)
+
+      // Calculate real duration from segments to handle timelapses
+      for segment in track.segments {
+        if segment.isEmpty { continue }
+        let sourceDuration = CMTimeGetSeconds(segment.timeMapping.source.duration)
+        realTimeDuration += sourceDuration
+      }
+
+      // Fallback if calculation fails or is zero
+      if realTimeDuration == 0 {
+        realTimeDuration = playbackDuration
+      }
+
+      // Extract creation date
+      var creationDateString: String?
+      
+      // Try common metadata first
+      if let creationDateItem = AVMetadataItem.metadataItems(from: asset.commonMetadata, withKey: AVMetadataKey.commonKeyCreationDate, keySpace: .common).first {
+        if let dateValue = creationDateItem.value as? Date {
+          let formatter = ISO8601DateFormatter()
+          creationDateString = formatter.string(from: dateValue)
+        } else if let dateString = creationDateItem.value as? String {
+           creationDateString = dateString
+        }
+      }
+      
+      // Try QuickTime metadata if common failed
+      if creationDateString == nil {
+          let qtMetadata = AVMetadataItem.metadataItems(from: asset.metadata, withKey: "com.apple.quicktime.creationdate", keySpace: .quickTimeUserData)
+          if let item = qtMetadata.first, let dateValue = item.value as? Date {
+              let formatter = ISO8601DateFormatter()
+              creationDateString = formatter.string(from: dateValue)
+          }
+      }
+
+      promise.resolve([
+        "creationDate": creationDateString,
+        "duration": playbackDuration,
+        "realTimeDuration": realTimeDuration,
+        "isTimelapse": realTimeDuration > (playbackDuration * 1.05) // 5% tolerance
+      ])
+    }
   }
 
   private func createTextLayer(from data: [String: Any], videoSize: CGSize, duration: CMTime) -> CATextLayer? {

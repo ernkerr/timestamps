@@ -26,3 +26,14 @@ export interface ExportOptions {
 export async function exportVideoWithOverlays(options: ExportOptions): Promise<string> {
   return await VideoExportModule.exportVideo(options);
 }
+
+export interface VideoMetadata {
+  creationDate?: string;
+  duration: number;
+  realTimeDuration: number;
+  isTimelapse: boolean;
+}
+
+export async function getVideoMetadata(sourceUri: string): Promise<VideoMetadata> {
+  return await VideoExportModule.getVideoMetadata(sourceUri);
+}

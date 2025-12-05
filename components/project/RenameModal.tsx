@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import Modal from 'react-native-modal';
 
 interface RenameModalProps {
   visible: boolean;
@@ -35,12 +36,17 @@ export function RenameModal({
 
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
+      isVisible={visible}
+      onBackdropPress={onCancel}
+      onBackButtonPress={onCancel}
+      animationIn="fadeIn"
+      animationOut="fadeOut"
+      backdropOpacity={0.5}
+      useNativeDriver
+      hideModalContentWhileAnimating
+      avoidKeyboard
     >
-      <View style={styles.overlay}>
+      <View style={styles.centeredView}>
         <View style={styles.modal}>
           {/* Header */}
           <View style={styles.header}>
@@ -88,12 +94,10 @@ export function RenameModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
+  centeredView: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
   },
   modal: {
     backgroundColor: '#fff',
@@ -181,3 +185,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
+

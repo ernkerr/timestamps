@@ -63,7 +63,7 @@ export function VideoWithOverlays({
       <View
         onLayout={handleLayout}
         style={{
-          aspectRatio: 4 / 3,
+          aspectRatio: 16 / 9,
           width: '100%',
           overflow: 'hidden'
         }}
