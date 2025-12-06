@@ -191,14 +191,18 @@ class VideoExport: NSObject {
     switch type {
     case "elapsed":
       let startTime = data["startTime"] as? Double ?? 0
+      let showHours = data["showHours"] as? Bool ?? true
+      let showMinutes = data["showMinutes"] as? Bool ?? true
       let showSeconds = data["showSeconds"] as? Bool ?? true
-      text = self.formatElapsedTime(seconds: startTime, showSeconds: showSeconds)
+      text = self.formatElapsedTime(seconds: startTime, showHours: showHours, showMinutes: showMinutes, showSeconds: showSeconds)
     case "timestamp":
       if let timestamp = data["realWorldStartTime"] as? Double {
         let date = Date(timeIntervalSince1970: timestamp / 1000)
         let format = data["format"] as? String ?? "12h"
+        let showHours = data["showHours"] as? Bool ?? true
+        let showMinutes = data["showMinutes"] as? Bool ?? true
         let showSeconds = data["showSeconds"] as? Bool ?? true
-        text = self.formatTimestamp(date: date, format: format, showSeconds: showSeconds)
+        text = self.formatTimestamp(date: date, format: format, showHours: showHours, showMinutes: showMinutes, showSeconds: showSeconds)
       } else {
         text = "12:00 PM"
       }
@@ -244,39 +248,76 @@ class VideoExport: NSObject {
     return UIColor(red: r, green: g, blue: b, alpha: a)
   }
 
-  private func formatElapsedTime(seconds: Double, showSeconds: Bool) -> String {
+  private func formatElapsedTime(seconds: Double, showHours: Bool, showMinutes: Bool, showSeconds: Bool) -> String {
     let hours = Int(seconds) / 3600
     let minutes = (Int(seconds) % 3600) / 60
     let secs = Int(seconds) % 60
 
-    if showSeconds {
-      return String(format: "%02d:%02d:%02d", hours, minutes, secs)
-    } else {
-      return String(format: "%02d:%02d", hours, minutes)
+    var parts: [String] = []
+    
+    if showHours {
+      parts.append(String(format: "%02d", hours))
     }
+    
+    if showMinutes {
+      parts.append(String(format: "%02d", minutes))
+    }
+    
+    if showSeconds {
+      parts.append(String(format: "%02d", secs))
+    }
+    
+    if parts.isEmpty {
+      return "00"
+    }
+    
+    return parts.joined(separator: ":")
   }
 
-  private func formatTimestamp(date: Date, format: String, showSeconds: Bool) -> String {
-    let formatter = DateFormatter()
-
-    switch format {
-    case "12h":
-      formatter.dateFormat = showSeconds ? "h:mm:ss a" : "h:mm a"
-    case "24h":
-      formatter.dateFormat = showSeconds ? "HH:mm:ss" : "HH:mm"
-    case "12h-full":
-      formatter.dateFormat = "h:mm:ss a"
-    case "24h-full":
-      formatter.dateFormat = "HH:mm:ss"
-    case "date-time-12h":
-      formatter.dateFormat = showSeconds ? "MMM d, h:mm:ss a" : "MMM d, h:mm a"
-    case "date-time-24h":
-      formatter.dateFormat = showSeconds ? "MMM d, HH:mm:ss" : "MMM d, HH:mm"
-    default:
-      formatter.dateFormat = "h:mm a"
+  private func formatTimestamp(date: Date, format: String, showHours: Bool, showMinutes: Bool, showSeconds: Bool) -> String {
+    let calendar = Calendar.current
+    let hours = calendar.component(.hour, from: date)
+    let minutes = calendar.component(.minute, from: date)
+    let seconds = calendar.component(.second, from: date)
+    
+    let is12h = format.contains("12h")
+    let is24h = format.contains("24h")
+    let includeDate = format.contains("date-time")
+    
+    var parts: [String] = []
+    
+    if showHours {
+      if is24h {
+        parts.append(String(format: "%02d", hours))
+      } else {
+        let h12 = hours % 12 == 0 ? 12 : hours % 12
+        parts.append("\(h12)")
+      }
     }
-
-    return formatter.string(from: date)
+    
+    if showMinutes {
+      parts.append(String(format: "%02d", minutes))
+    }
+    
+    if showSeconds {
+      parts.append(String(format: "%02d", seconds))
+    }
+    
+    var timeString = parts.joined(separator: ":")
+    
+    if is12h && !timeString.isEmpty {
+      let ampm = hours >= 12 ? "PM" : "AM"
+      timeString += " \(ampm)"
+    }
+    
+    if includeDate {
+      let dateFormatter = DateFormatter()
+      dateFormatter.dateFormat = "MMM d"
+      let dateStr = dateFormatter.string(from: date)
+      return timeString.isEmpty ? dateStr : "\(dateStr), \(timeString)"
+    }
+    
+    return timeString.isEmpty ? "00:00" : timeString
   }
 
   private func getQualityPreset(_ quality: String) -> String {

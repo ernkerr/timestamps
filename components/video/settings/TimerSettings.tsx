@@ -1,6 +1,5 @@
 import { ThemedText } from '@/components/themed-text';
 import { useVideoStore } from '@/lib/store/videoStore';
-import { Clock } from 'lucide-react-native';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { BackgroundSettings } from './BackgroundSettings';
 import { ColorSettings } from './ColorSettings';
@@ -11,7 +10,7 @@ interface TimerSettingsProps {
 }
 
 export function TimerSettings({ overlayId }: TimerSettingsProps) {
-  const { overlays, updateOverlay, sourceVideo } = useVideoStore();
+  const { overlays, updateOverlay } = useVideoStore();
   const overlayConfig = overlays.find(o => o.id === overlayId);
 
   if (!overlayConfig || !overlayConfig.elapsedTimer) {
@@ -21,8 +20,6 @@ export function TimerSettings({ overlayId }: TimerSettingsProps) {
   const showHours = overlayConfig.showHours ?? true;
   const showMinutes = overlayConfig.showMinutes ?? true;
   const showSeconds = overlayConfig.showSeconds ?? true;
-  const timelapseSpeed = overlayConfig.elapsedTimer.timelapseSpeed || 1;
-  const videoDuration = sourceVideo?.duration || 0;
 
   const handleToggle = (field: 'showHours' | 'showMinutes' | 'showSeconds') => {
     updateOverlay(overlayId, { [field]: !overlayConfig[field] });
@@ -74,22 +71,6 @@ export function TimerSettings({ overlayId }: TimerSettingsProps) {
             </ThemedText>
           </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Timelapse Speed Info */}
-      <View style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Timelapse Speed</ThemedText>
-        <View style={styles.infoBox}>
-          <Clock size={16} color="#666" />
-          <ThemedText style={styles.infoText}>
-            {timelapseSpeed.toFixed(1)}× speed
-          </ThemedText>
-        </View>
-        {videoDuration > 0 && (
-          <ThemedText style={styles.hint}>
-            Real-world duration: {Math.round((videoDuration * timelapseSpeed) / 60)} minutes
-          </ThemedText>
-        )}
       </View>
 
       {/* Divider */}
