@@ -89,8 +89,18 @@ export default function ConfigureScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerMark} />
-        <ThemedText style={styles.headerText}>CONFIGURE</ThemedText>
+        <View style={styles.headerLeft}>
+          <View style={styles.headerMark} />
+          <ThemedText style={styles.headerText}>CONFIGURE</ThemedText>
+        </View>
+        <TouchableOpacity
+          style={styles.headerNextButton}
+          onPress={handleNext}
+          activeOpacity={0.7}
+        >
+          <ThemedText style={styles.headerNextText}>Next</ThemedText>
+          <ThemedText style={styles.headerNextArrow}>→</ThemedText>
+        </TouchableOpacity>
       </View>
 
       {/* Main Content Area */}
@@ -157,25 +167,13 @@ export default function ConfigureScreen() {
         </ScrollView>
       </View>
 
-      {/* Bottom Overlay Type Selector */}
-      <OverlayTypeSelector
-        selectedType={selectedOverlay?.type || null}
-        onSelectType={handleTypeSelect}
-      />
-
-      {/* Bottom Action */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={styles.nextButton}
-          onPress={handleNext}
-          activeOpacity={0.7}
-        >
-          <ThemedText style={styles.nextButtonText}>
-            Continue to Preview
-          </ThemedText>
-          <ThemedText style={styles.nextArrow}>→</ThemedText>
-        </TouchableOpacity>
-      </View>
+      {/* Bottom Overlay Type Selector - Only show when NOT editing */}
+      {!settingsPanelOpen && (
+        <OverlayTypeSelector
+          selectedType={selectedOverlay?.type || null}
+          onSelectType={handleTypeSelect}
+        />
+      )}
     </View>
   );
 }
@@ -188,11 +186,16 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   headerMark: {
     width: 4,
@@ -206,6 +209,23 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: "#000",
   },
+  headerNextButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#000",
+  },
+  headerNextText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#fff",
+  },
+  headerNextArrow: {
+    fontSize: 16,
+    color: "#fff",
+  },
   mainContent: {
     flex: 1,
   },
@@ -217,7 +237,7 @@ const styles = StyleSheet.create({
   videoContainer: {
     width: "100%",
     aspectRatio: 16 / 9,
-    backgroundColor: "#000",
+    backgroundColor: "transparent", // Changed from #000
     borderRadius: 4,
     overflow: "hidden",
   },
@@ -293,34 +313,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "400",
     color: "#666",
-  },
-  bottomBar: {
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderTopColor: "#000",
-    padding: 24,
-  },
-  nextButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#000",
-    borderRadius: 0,
-    backgroundColor: "#000",
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-  },
-  nextButtonText: {
-    fontSize: 16,
-    fontWeight: "400",
-    letterSpacing: 0.5,
-    color: "#fff",
-    marginRight: 8,
-  },
-  nextArrow: {
-    fontSize: 20,
-    fontWeight: "300",
-    color: "#fff",
   },
 });

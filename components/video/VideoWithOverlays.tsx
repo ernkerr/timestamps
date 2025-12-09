@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { View, Pressable, LayoutChangeEvent } from 'react-native';
-import { VideoView, useVideoPlayer } from 'expo-video';
-import type { VideoSource } from 'expo-video';
-import { DraggableOverlay } from './DraggableOverlay';
 import type { OverlayConfig } from '@/lib/types/overlay';
+import type { VideoSource } from 'expo-video';
+import { VideoView, useVideoPlayer } from 'expo-video';
+import { useEffect, useState } from 'react';
+import { LayoutChangeEvent, Pressable, View } from 'react-native';
+import { DraggableOverlay } from './DraggableOverlay';
 
 interface VideoWithOverlaysProps {
   videoSource: VideoSource;
@@ -70,8 +70,8 @@ export function VideoWithOverlays({
       >
         <VideoView
           player={player}
-          style={{ width: '100%', height: '100%' }}
-          allowsFullscreen
+          style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
+          fullscreenOptions={{ enable: true }}
           allowsPictureInPicture={false}
           nativeControls={false}
           contentFit="contain"
