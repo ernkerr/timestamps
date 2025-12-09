@@ -74,7 +74,6 @@ interface VideoStore {
   selectedOverlayId: string | null;
   addOverlay: (type: OverlayType) => void;
   removeOverlay: (id: string) => void;
-  toggleOverlayType: (type: OverlayType) => void;
   updateOverlay: (id: string, updates: Partial<OverlayConfig>) => void;
   selectOverlay: (id: string | null) => void;
   hasOverlayType: (type: OverlayType) => boolean;
@@ -176,27 +175,7 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
       };
     }),
 
-  toggleOverlayType: (type) =>
-    set((state) => {
-      if (type === 'none') {
-        return { overlays: [], selectedOverlayId: null };
-      }
 
-      const existingOverlay = state.overlays.find((o) => o.type === type);
-      if (existingOverlay) {
-        // If exists, just select it (don't remove)
-        return {
-          selectedOverlayId: existingOverlay.id,
-        };
-      } else {
-        // Add if doesn't exist
-        const newOverlay = createDefaultOverlay(type, state.overlays.length, state.sourceVideo);
-        return {
-          overlays: [...state.overlays, newOverlay],
-          selectedOverlayId: newOverlay.id,
-        };
-      }
-    }),
 
   updateOverlay: (id, updates) =>
     set((state) => ({

@@ -7,6 +7,7 @@ import { VideoWithOverlays } from "@/components/video/VideoWithOverlays";
 import { useVideoStore } from "@/lib/store/videoStore";
 import type { OverlayType } from "@/lib/types/overlay";
 import { debounce } from "@/lib/utils/debounce";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -23,7 +24,7 @@ export default function ConfigureScreen() {
     sourceVideo,
     overlays,
     selectedOverlayId,
-    toggleOverlayType,
+    addOverlay,
     selectOverlay,
     updateOverlay,
     removeOverlay,
@@ -61,14 +62,7 @@ export default function ConfigureScreen() {
   };
 
   const handleTypeSelect = (type: OverlayType) => {
-    toggleOverlayType(type);
-    // Auto-select the newly created overlay
-    setTimeout(() => {
-      const newOverlay = overlays.find(o => o.type === type);
-      if (newOverlay) {
-        selectOverlay(newOverlay.id);
-      }
-    }, 100);
+    addOverlay(type);
   };
 
   const handleNext = () => {
@@ -90,7 +84,9 @@ export default function ConfigureScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <View style={styles.headerMark} />
+          <TouchableOpacity onPress={() => router.dismiss()} style={styles.headerCloseButton}>
+            <Ionicons name="close" size={24} color="#000" />
+          </TouchableOpacity>
           <ThemedText style={styles.headerText}>CONFIGURE</ThemedText>
         </View>
         <TouchableOpacity
@@ -197,10 +193,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  headerMark: {
-    width: 4,
-    height: 20,
-    backgroundColor: "#000",
+  headerCloseButton: {
     marginRight: 12,
   },
   headerText: {

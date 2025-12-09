@@ -12,7 +12,7 @@ export default function VideoLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: true,
+        headerShown: false,
         headerLeft: () => (
           <TouchableOpacity onPress={() => router.dismiss()} style={{ marginLeft: 0 }}>
             <Ionicons name="close" size={28} color={iconColor} />
