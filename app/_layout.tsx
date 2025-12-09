@@ -1,26 +1,26 @@
 import {
-    Inter_400Regular,
-    Inter_700Bold
+  Inter_400Regular,
+  Inter_700Bold
 } from '@expo-google-fonts/inter';
 import {
-    Lato_400Regular,
-    Lato_700Bold
+  Lato_400Regular,
+  Lato_700Bold
 } from '@expo-google-fonts/lato';
 import {
-    Montserrat_400Regular,
-    Montserrat_700Bold
+  Montserrat_400Regular,
+  Montserrat_700Bold
 } from '@expo-google-fonts/montserrat';
 import {
-    Oswald_400Regular,
-    Oswald_700Bold
+  Oswald_400Regular,
+  Oswald_700Bold
 } from '@expo-google-fonts/oswald';
 import {
-    PlayfairDisplay_400Regular,
-    PlayfairDisplay_700Bold
+  PlayfairDisplay_400Regular,
+  PlayfairDisplay_700Bold
 } from '@expo-google-fonts/playfair-display';
 import {
-    Roboto_400Regular,
-    Roboto_700Bold
+  Roboto_400Regular,
+  Roboto_700Bold
 } from '@expo-google-fonts/roboto';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -77,6 +77,7 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(video)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
         <StatusBar style="auto" />
