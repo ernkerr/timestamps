@@ -17,9 +17,11 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ConfigureScreen() {
   const router = useRouter();
+  const { top } = useSafeAreaInsets();
   const {
     sourceVideo,
     overlays,
@@ -82,7 +84,7 @@ export default function ConfigureScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: top + 10 }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.dismiss()} style={styles.headerCloseButton}>
             <Ionicons name="close" size={24} color="#000" />
@@ -184,7 +186,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 24,
-    paddingTop: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
