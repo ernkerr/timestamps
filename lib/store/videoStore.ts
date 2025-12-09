@@ -184,15 +184,13 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
 
       const existingOverlay = state.overlays.find((o) => o.type === type);
       if (existingOverlay) {
-        // Remove if exists
-        const newOverlays = state.overlays.filter((o) => o.type !== type);
+        // If exists, just select it (don't remove)
         return {
-          overlays: newOverlays,
-          selectedOverlayId: state.selectedOverlayId === existingOverlay.id ? null : state.selectedOverlayId,
+          selectedOverlayId: existingOverlay.id,
         };
       } else {
         // Add if doesn't exist
-        const newOverlay = createDefaultOverlay(type, state.overlays.length);
+        const newOverlay = createDefaultOverlay(type, state.overlays.length, state.sourceVideo);
         return {
           overlays: [...state.overlays, newOverlay],
           selectedOverlayId: newOverlay.id,
