@@ -12,10 +12,13 @@ export interface Font {
  * System fonts available on iOS
  */
 export const AVAILABLE_FONTS: Font[] = [
+  { value: 'Inter-Regular', label: 'Inter', family: 'Inter-Regular' },
+  { value: 'Roboto-Regular', label: 'Roboto', family: 'Roboto-Regular' },
+  { value: 'Oswald-Regular', label: 'Oswald', family: 'Oswald-Regular' },
+  { value: 'Lato-Regular', label: 'Lato', family: 'Lato-Regular' },
+  { value: 'PlayfairDisplay-Regular', label: 'Playfair Display', family: 'PlayfairDisplay-Regular' },
+  { value: 'Montserrat-Regular', label: 'Montserrat', family: 'Montserrat-Regular' },
   { value: 'System', label: 'System', family: 'System' },
-  { value: 'SF-Mono', label: 'SF Mono', family: 'SFMono-Regular' },
-  { value: 'SF-Rounded', label: 'SF Rounded', family: 'SFRounded-Regular' },
-  { value: 'New-York', label: 'New York', family: 'NewYork-Regular' },
   { value: 'Courier', label: 'Courier', family: 'Courier' },
   { value: 'Menlo', label: 'Menlo', family: 'Menlo-Regular' },
 ];

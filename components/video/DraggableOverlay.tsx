@@ -1,14 +1,14 @@
+import type { OverlayConfig } from "@/lib/types/overlay";
+import { Pencil, X } from "lucide-react-native";
 import { useEffect } from "react";
 import { TouchableOpacity, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  runOnJS,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
 } from "react-native-reanimated";
-import { X, Pencil } from "lucide-react-native";
 import { OverlayPreview } from "./OverlayPreview";
-import type { OverlayConfig } from "@/lib/types/overlay";
 
 interface DraggableOverlayProps {
   config: OverlayConfig;
@@ -104,92 +104,91 @@ export function DraggableOverlay({
         onStartShouldSetResponder={() => true}
         onResponderTerminationRequest={() => false}
       >
-        {/* White border wrapper when selected */}
-        {isSelected ? (
-          <View style={{ position: "relative", alignSelf: "flex-start" }}>
-            <View
-              style={{
-                borderWidth: 1,
-                borderColor: "white",
-
-                padding: 8,
-              }}
-            >
-              <OverlayPreview
-                config={modifiedConfig}
-                currentTime={currentTime}
-                videoWidth={videoWidth}
-                videoHeight={videoHeight}
-                inline={true}
-              />
-            </View>
-
-            {/* Delete button (left corner, outside border) */}
-            {onDelete && (
-              <TouchableOpacity
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-                style={{
-                  position: "absolute",
-                  top: -10,
-                  left: -10,
-                  width: 24,
-                  height: 24,
-                  borderRadius: 12,
-                  backgroundColor: "#000",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 2,
-                  elevation: 3,
-                }}
-                activeOpacity={0.7}
-              >
-                <X color="white" size={14} />
-              </TouchableOpacity>
-            )}
-
-            {/* Edit button (right corner, outside border) */}
-            {onEdit && (
-              <TouchableOpacity
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-                style={{
-                  position: "absolute",
-                  top: -10,
-                  right: -10,
-                  width: 24,
-                  height: 24,
-                  borderRadius: 12,
-                  backgroundColor: "#000",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 2,
-                  elevation: 3,
-                }}
-                activeOpacity={0.7}
-              >
-                <Pencil color="white" size={12} />
-              </TouchableOpacity>
-            )}
-          </View>
-        ) : (
+        <View style={{ position: "relative", alignSelf: "flex-start" }}>
           <OverlayPreview
             config={modifiedConfig}
             currentTime={currentTime}
             videoWidth={videoWidth}
             videoHeight={videoHeight}
+            inline={true}
           />
-        )}
+
+          {isSelected && (
+            <>
+              {/* Selection Border */}
+              <View
+                style={{
+                  position: "absolute",
+                  top: -9,
+                  left: -9,
+                  right: -9,
+                  bottom: -9,
+                  borderWidth: 1,
+                  borderColor: "white",
+                  pointerEvents: "none",
+                }}
+              />
+
+              {/* Delete button (left corner) */}
+              {onDelete && (
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: -19,
+                    left: -19,
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: "#000",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 2,
+                    elevation: 3,
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <X color="white" size={14} />
+                </TouchableOpacity>
+              )}
+
+              {/* Edit button (right corner) */}
+              {onEdit && (
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: -19,
+                    right: -19,
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: "#000",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 2,
+                    elevation: 3,
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Pencil color="white" size={12} />
+                </TouchableOpacity>
+              )}
+            </>
+          )}
+        </View>
       </Animated.View>
     </GestureDetector>
   );
