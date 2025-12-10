@@ -7,10 +7,12 @@ import { VideoWithOverlays } from "@/components/video/VideoWithOverlays";
 import { useVideoStore } from "@/lib/store/videoStore";
 import type { OverlayType } from "@/lib/types/overlay";
 import { debounce } from "@/lib/utils/debounce";
+import { exportVideo } from "@/lib/services/videoExport";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -26,15 +28,21 @@ export default function ConfigureScreen() {
     sourceVideo,
     overlays,
     selectedOverlayId,
+    exportSettings,
     addOverlay,
     selectOverlay,
     updateOverlay,
     removeOverlay,
-    saveDraftProject
+    saveDraftProject,
+    startExport,
+    updateExportProgress,
+    completeExport,
+    failExport,
   } = useVideoStore();
 
   // Settings panel state management
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Auto-open/close settings panel based on selection
   useEffect(() => {
@@ -67,8 +75,38 @@ export default function ConfigureScreen() {
     addOverlay(type);
   };
 
-  const handleNext = () => {
-    router.push("/(video)/preview");
+  const handleNext = async () => {
+    if (!sourceVideo) return;
+
+    setIsExporting(true);
+    startExport();
+
+    try {
+      const result = await exportVideo({
+        sourceVideoUri: sourceVideo.uri,
+        overlays,
+        codec: exportSettings.codec,
+        quality: exportSettings.quality,
+        onProgress: (progress) => {
+          updateExportProgress(progress);
+        },
+      });
+
+      if (result.success && result.outputUri) {
+        completeExport(result.outputUri);
+        Alert.alert('Success', 'Video exported successfully!');
+        router.dismiss(); // Close the video editing flow
+      } else {
+        failExport(result.error || 'Export failed');
+        Alert.alert('Export Failed', result.error || 'Unknown error');
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Export failed';
+      failExport(message);
+      Alert.alert('Export Failed', message);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (!sourceVideo) {
@@ -92,12 +130,14 @@ export default function ConfigureScreen() {
           <ThemedText style={styles.headerText}>CONFIGURE</ThemedText>
         </View>
         <TouchableOpacity
-          style={styles.headerNextButton}
+          style={[styles.headerNextButton, isExporting && styles.headerNextButtonDisabled]}
           onPress={handleNext}
           activeOpacity={0.7}
+          disabled={isExporting}
         >
-          <ThemedText style={styles.headerNextText}>Next</ThemedText>
-          <ThemedText style={styles.headerNextArrow}>→</ThemedText>
+          <ThemedText style={styles.headerNextText}>
+            {isExporting ? 'Exporting...' : 'Export'}
+          </ThemedText>
         </TouchableOpacity>
       </View>
 
@@ -210,6 +250,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     backgroundColor: "#000",
+  },
+  headerNextButtonDisabled: {
+    opacity: 0.5,
   },
   headerNextText: {
     fontSize: 14,

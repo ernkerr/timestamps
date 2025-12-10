@@ -26,6 +26,7 @@ export default function HomeScreen() {
         mediaTypes: ['videos'],
         allowsEditing: false,
         quality: 1,
+        videoExportPreset: ImagePicker.VideoExportPreset.H264_1920x1080,
       });
 
       if (!result.canceled && result.assets[0]) {
@@ -71,6 +72,7 @@ export default function HomeScreen() {
         allowsEditing: false,
         quality: 1,
         videoMaxDuration: 300, // 5 minutes max
+        videoExportPreset: ImagePicker.VideoExportPreset.H264_1920x1080,
       });
 
       if (!result.canceled && result.assets[0]) {
